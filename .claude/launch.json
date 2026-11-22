@@ -1,0 +1,1 @@
+{"version":"0.0.1","configurations":[{"name":"site","runtimeExecutable":"python3","runtimeArgs":["-m","http.server","8765","-d","dist"],"port":8765},{"name":"vdev","runtimeExecutable":"npx","runtimeArgs":["-y","vercel@latest","dev","--listen","8766","--yes"],"port":8766}]}

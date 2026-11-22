@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2c6353"/><stop offset="1" stop-color="#173a31"/>
+    </linearGradient>
+    <linearGradient id="sun" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f6d9a8"/><stop offset=".55" stop-color="#e3a564"/><stop offset="1" stop-color="#c47a45"/>
+    </linearGradient>
+    <clipPath id="above"><rect x="0" y="0" width="512" height="358"/></clipPath>
+  </defs>
+  <rect width="512" height="512" fill="url(#sky)"/>
+  <circle cx="256" cy="262" r="132" fill="url(#sun)" clip-path="url(#above)"/>
+  <!-- 分裂門（candi bentar）：左右對稱的階梯塔，中間留一道縫 -->
+  <g fill="#14322a">
+    <path d="M150 358V330H164V298H178V266H192V238H206V212H220V186H234V166H246V358Z"/>
+    <path d="M362 358V330H348V298H334V266H320V238H306V212H292V186H278V166H266V358Z"/>
+    <rect x="96" y="356" width="320" height="8" rx="2"/>
+  </g>
+  <rect x="0" y="364" width="512" height="148" fill="#173a31"/>
+  <g fill="none" stroke="#f3e6cf" stroke-linecap="round" stroke-width="9" opacity=".9">
+    <path d="M150 402c18-10 36-10 54 0s36 10 54 0 36-10 54 0 36 10 54 0"/>
+    <path d="M196 436c15-8 30-8 45 0s30 8 45 0 30-8 45 0" opacity=".55"/>
+  </g>
+</svg>
