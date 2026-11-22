@@ -1016,6 +1016,7 @@ dialog#lb::backdrop{background:color-mix(in srgb,var(--green-d) 72%,transparent)
 html{font-variant-numeric:lining-nums}
 /* ===== 主題：地圖風格 ===== */
 .leaflet-tile-pane{filter:var(--map-filter,none)}
+.leaflet-overlay-pane svg{filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.22))}
 /* 染色層：保留明暗、換成主題色（mix-blend-mode:color），隨地圖平移 */
 .map-tint{position:absolute;left:-50000px;top:-50000px;width:100000px;height:100000px;mix-blend-mode:color;pointer-events:none}
 /* ===== 封面＋行前資料（不顯示地圖） ===== */

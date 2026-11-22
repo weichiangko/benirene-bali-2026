@@ -45,6 +45,7 @@
     grayscale: ['黑白程度 %', 0, 100, 0],
     tint_strength: ['染色濃度 %（搭配 tint 顏色）', 0, 80, 0],
     label_opacity: ['地名文字不透明度 %（淺灰、深灰、衛星、海洋底圖才有獨立地名層）', 0, 100, 100],
+    label_warmth: ['地名文字暖色 %：0 為原本灰色，100 為金棕色（只作用在獨立地名層）', 0, 100, 0],
   };
   var MAP_STYLES = {
     natural: { name: '原色', base: 'street' },

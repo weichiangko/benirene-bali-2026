@@ -189,7 +189,7 @@ function insets(){const sat=parseFloat(getComputedStyle(document.documentElement
 let tileSet={base:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}'],labels:'',max:16},mapLayers=[],mapLayerKey='';
 function setMapLayers(){if(!map||!window.TRIP_THEMES||!curTheme)return;const m=curTheme.map,ts=TRIP_THEMES.tileLayers(m),key=JSON.stringify(ts);
  const tint=map.getPane('tint');tint.firstChild.style.cssText=m.tint&&m.tint_strength?`background:${m.tint};opacity:${m.tint_strength/100}`:'display:none';
- map.getPane('labels').style.opacity=m.label_opacity/100;
+ const lp=map.getPane('labels');lp.style.opacity=m.label_opacity/100;lp.style.filter=m.label_warmth?`sepia(${m.label_warmth}%) saturate(${100+m.label_warmth*1.6}%) brightness(${100-m.label_warmth*.12}%)`:'none';
  if(key===mapLayerKey)return;mapLayerKey=key;tileSet=ts;mapLayers.forEach(l=>map.removeLayer(l));
  mapLayers=ts.base.map(u=>L.tileLayer(u,{maxZoom:19,maxNativeZoom:ts.max,attribution:'Tiles &copy; Esri'}).addTo(map));
  if(ts.labels)mapLayers.push(L.tileLayer(ts.labels,{pane:'labels',maxZoom:19,maxNativeZoom:ts.max}).addTo(map))}
@@ -218,8 +218,10 @@ const MODE_STYLE={car:null,boat:{dashArray:'12 9',weight:3},plane:{dashArray:'2 
 const MODE_NAME={car:'開車',boat:'搭船',plane:'搭飛機',straight:'直線（查無道路）'};
 function drawRoute(g){const feats=g.type==='FeatureCollection'?g.features:[{type:'Feature',properties:{mode:'car'},geometry:g}];
  feats.forEach(f=>{const m=(f.properties&&f.properties.mode)||'car',st=m in MODE_STYLE?MODE_STYLE[m]:MODE_STYLE.straight;
-  if(!st){L.geoJSON(f,{style:{color:cv('--paper'),weight:7,opacity:.95},interactive:false}).addTo(overlay);L.geoJSON(f,{style:{color:cv('--gold'),weight:3.5,opacity:.95,lineJoin:'round'},interactive:false}).addTo(overlay)}
-  else{L.geoJSON(f,{style:{color:cv('--paper'),weight:st.weight+3,opacity:.8},interactive:false}).addTo(overlay);L.geoJSON(f,{style:{color:cv('--gold'),opacity:.95,...st},interactive:true}).bindTooltip(MODE_NAME[m],{sticky:true,className:'map-tip'}).addTo(overlay)}})}
+  // 路線要跟底圖道路分得開：白色光暈 → 深色描邊 → 強調色主線
+  const R={lineJoin:'round',lineCap:'round',interactive:false};
+  if(!st){L.geoJSON(f,{style:{...R,color:'#fff',weight:12,opacity:.9}}).addTo(overlay);L.geoJSON(f,{style:{...R,color:cv('--brown'),weight:7.5,opacity:1}}).addTo(overlay);L.geoJSON(f,{style:{...R,color:cv('--gold'),weight:4.5,opacity:1}}).addTo(overlay)}
+  else{L.geoJSON(f,{style:{...R,color:'#fff',weight:st.weight+7,opacity:.85}}).addTo(overlay);L.geoJSON(f,{style:{color:cv('--gold'),opacity:1,...st,weight:st.weight+1.5,lineCap:st.lineCap||'butt'},interactive:true}).bindTooltip(MODE_NAME[m],{sticky:true,className:'map-tip'}).addTo(overlay)}})}
 function routeCoords(g){if(!g)return[];const fs=g.type==='FeatureCollection'?g.features.map(f=>f.geometry):[g];return fs.flatMap(x=>x.coordinates.map(c=>[c[1],c[0]]))}
 function updatePins(){const d=day();if(!d)return;d.pins.forEach(x=>{const m=markers[x.id];if(!m)return;const el=m.getElement();if(!el)return;const p=el.firstChild;p.classList.toggle('sel',x.id===S.sel);p.classList.toggle('dim',S.rain&&!x.hasRain);el.classList.toggle('on',x.id===S.sel)})}
 function fitDay(){const d=day();if(!map||!d)return fitAll();const ps=d.pins.map(x=>x.pt.latlng),i=insets();if(ps.length>1)map.fitBounds(L.latLngBounds(ps),{paddingTopLeft:i.tl,paddingBottomRight:i.br,maxZoom:14});else if(ps.length)map.setView(ps[0],14);else map.setView([-8.55,115.2],10)}
