@@ -123,10 +123,14 @@ function panelDay(d){const n=pad(d.idx),cnt=d.pins.length;
  const addTop=S.edit?`<button type="button" class="pill addpill" data-add="${d.id}">＋ 新增景點</button>`:'';
  return grab(d.title,`${d.area} · ${cnt} 個地標`)+`<div class="sc-wrap">${curSheet(d)}</div><div class="scroll" id="scroll"><header class="dh only-desk"><span class="eyebrow">DAY ${n} · ${esc(d.date)}</span><h1>${esc(d.title)}</h1><span class="meta">${esc(d.area)} · 2 人同行 · ${cnt} 個地標</span><p>${esc(d.note)}</p></header><p class="sum only-touch">${layout==='phone'?esc(d.area)+' · ':''}${esc(d.note)}</p>${addTop?`<div class="tools touchtools only-touch">${addTop}</div>`:''}${eday}<div class="tools only-desk">${addTop}<button class="pill rainbtn" data-rain aria-pressed="${S.rain}">雨天安排 ☂</button><button class="pill allbtn" data-all aria-pressed="${S.all}">${S.all?'全部收合':'全部展開'}</button></div><div class="tl">${d.items.length?d.items.map(rowHtml).join(''):`<p class="simple">這天還沒有項目。${S.edit?'點「新增景點」貼上 Google 地圖連結就能加入。':'按「編輯」即可新增，或請 AI 幫忙加入。'}</p>`}</div>${add}<div class="daybtns only-desk"><a href="${d.idx===1?'#prep':'#d'+(d.idx-1)}">${d.idx===1?'← 封面・行前':'← 前一天'}</a>${d.idx===N()?'':`<a class="next" href="#d${d.idx+1}">後一天 →</a>`}</div>${foot(d)}</div>`}
 function quickLinks(d){const seen=new Set();return d.items.filter(x=>x.bookUrl&&!seen.has(x.bookUrl)&&seen.add(x.bookUrl)).map(x=>ext(x.bookUrl,esc(x.ttl))).join('')}
-// 純文字裡的 [文字](網址) 與網址轉成可點的連結（其餘一律跳脫）
-function linkify(t){const parts=[];let s=String(t??'').replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g,(_,a,u)=>{parts.push([a,u]);return `\u0000${parts.length-1}\u0000`});
- s=esc(s).replace(/https?:\/\/[^\s<>"'）)]+/g,u=>`<a href="${u}" target="_blank" rel="noopener noreferrer">${u.replace(/^https?:\/\/(www\.)?/,'').slice(0,40)}${u.length>48?'…':''}</a>`);
- return s.replace(/\u0000(\d+)\u0000/g,(_,i)=>`<a href="${esc(parts[+i][1])}" target="_blank" rel="noopener noreferrer">${esc(parts[+i][0])} ↗</a>`)}
+// 純文字裡的 [文字](網址) 與裸網址，改成句子裡的小按鈕（網站名稱＋↗），不顯示一長串網址
+const SITE_NAMES=[[/airbnb\./,'Airbnb'],[/(maps\.app\.goo\.gl|google\.[a-z.]+\/maps|goo\.gl\/maps)/,'Google 地圖'],[/klook\./,'Klook'],[/booking\.com/,'Booking.com'],[/agoda\./,'Agoda'],[/kkday\./,'KKday'],[/instagram\./,'Instagram'],[/facebook\.|fb\.com/,'Facebook'],[/wa\.me|whatsapp\./,'WhatsApp'],[/tripadvisor\./,'Tripadvisor'],[/momence\./,'Momence'],[/telkomsel\./,'Telkomsel'],[/evisa\.imigrasi|imigrasi\.go\.id/,'印尼 e-Visa'],[/lovebali\./,'Love Bali'],[/youtube\.|youtu\.be/,'YouTube']];
+function siteName(u){const v=String(u).toLowerCase();for(const[re,n]of SITE_NAMES)if(re.test(v))return n;try{const h=new URL(u).hostname.replace(/^www\./,'');const p=h.split('.');return p.length>2&&p[p.length-2].length<=3?p[p.length-3]:p[p.length-2]||h}catch(e){return '連結'}}
+const lkBtn=(u,label)=>`<a class="lk" href="${esc(u)}" target="_blank" rel="noopener noreferrer" title="${esc(u)}">${esc(label)}<span aria-hidden="true">↗</span></a>`;
+function linkify(t){const parts=[];let s=String(t??'').replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g,(_,a,u)=>{parts.push(lkBtn(u,a));return `\u0000${parts.length-1}\u0000`});
+ s=s.replace(/https?:\/\/[^\s<>"'（）)｜|，,。]+/g,u=>{u=u.replace(/[.;:；：]+$/,'');parts.push(lkBtn(u,siteName(u)));return `\u0000${parts.length-1}\u0000`});
+ // 網址拿掉後留下的「（房源： ）」「： 」這類空殼收乾淨
+ return esc(s).replace(/\s+(?=\u0000)/g,' ').replace(/(\u0000\d+\u0000)\s+(?=[）)；。，])/g,'$1').replace(/\u0000(\d+)\u0000/g,(_,i)=>parts[+i])}
 // 待辦依標題裡的日期排序（1 月排在 12 月之後），沒日期的照原順序放後面，已完成的沉到最下面
 const ckDate=c=>{const m=plain(c.title).match(/(\d{1,2})\/(\d{1,2})/);if(!m)return 9999;const mo=+m[1];return (mo<7?mo+12:mo)*40+ +m[2]};
 const ckSort=C=>[...C].sort((a,b)=>(a.done-b.done)||(ckDate(a)-ckDate(b))||(a.position-b.position));
