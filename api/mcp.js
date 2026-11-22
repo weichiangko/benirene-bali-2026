@@ -10,7 +10,7 @@ const ITEM_PROPS = {
   time: str('時間，例如 "19:00" 或 "約 19:00–20:00"。會依時間自動排序'),
   type: str('類型，例如 景點、餐廳、咖啡、行程、交通、住宿、按摩、購物'),
   note: str('標題下方的一句簡短說明'),
-  reserve: str('預訂狀態，例如 "需訂位"、"已訂"'),
+  reserve: str('預訂狀態，例如 "需訂位"、"待購買"、"已訂"。訂好後改成「已訂」或「已購買」，網站的預訂入口就不再列出這一項（連結仍保留在項目裡）'),
   booking_url: str('預訂連結'),
   travel_mode: { type: 'string', enum: ['car', 'boat', 'plane'], description: '從前一個地點到這裡的交通方式：car 開車（預設，地圖沿道路畫實線）、boat 搭船、plane 搭飛機（地圖畫直線虛線）。例如到佩尼達島的快艇碼頭→島上第一站用 boat' },
   food: { type: 'array', items: { type: 'string' }, description: '吃什麼／必點，每段一個字串' },
