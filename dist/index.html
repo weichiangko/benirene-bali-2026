@@ -681,7 +681,7 @@ svg.leaflet-image-layer.leaflet-interactive path {
 
 </style>
 <style>
-:root{--bg:#f5f2ea;--paper:#fffdf8;--ink:#223c35;--muted:#5d6c65;--green:#214f43;--green-d:#163a31;--line:#dce1d6;--soft:#e8eee5;--gold:#a76c3f;--brown:#8a5530;--map:#e4eadd;--ph:#dfe6d8;--warnbg:#f5e8da;--warn:#7d4a24;--dash:#c9b39c;--handle:#b9c1b4;--serif:Georgia,'Songti TC','Noto Serif TC',serif;--sans:-apple-system,system-ui,'PingFang TC','Noto Sans TC',sans-serif;--sheet:0px;--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px)}
+:root{--bg:#f5f2ea;--paper:#fffdf8;--ink:#223c35;--muted:#5d6c65;--green:#214f43;--green-d:#163a31;--line:#dce1d6;--soft:#e8eee5;--gold:#a76c3f;--brown:#8a5530;--map:#e4eadd;--ph:#dfe6d8;--warnbg:#f5e8da;--warn:#7d4a24;--dash:#c9b39c;--handle:#b9c1b4;--sel:#a76c3f;--serif:Georgia,'Songti TC','Noto Serif TC',serif;--sans:-apple-system,system-ui,'PingFang TC','Noto Sans TC',sans-serif;--sheet:0px;--sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px)}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;background:var(--bg)}
 body{color:var(--ink);font-family:var(--sans);font-size:15px;-webkit-font-smoothing:antialiased}
@@ -750,9 +750,9 @@ svg{flex-shrink:0}
 .row:first-child .rail i{top:14px}
 .row:last-child .rail i{bottom:auto;height:28px}
 .dot{position:relative;margin-top:14px;width:24px;height:24px;border-radius:50%;color:var(--paper);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 3px var(--bg);background:var(--green)}
-.row.sel .dot{background:var(--gold)}
+.row.sel .dot{background:var(--sel,var(--gold))}
 .card{margin-bottom:10px;background:var(--paper);border-radius:16px;overflow:hidden;border:1px solid var(--line);scroll-margin:16px}
-.row.sel .card{border-color:var(--green);box-shadow:0 0 0 1px var(--green)}
+.row.sel .card{border-color:var(--sel,var(--gold));box-shadow:0 0 0 1px var(--sel,var(--gold))}
 .head{width:100%;border:0;background:transparent;color:var(--ink);text-align:left;padding:14px;display:flex;gap:10px;align-items:flex-start;font-size:inherit}
 .head:disabled{cursor:default}
 .hmain{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
@@ -776,7 +776,7 @@ svg{flex-shrink:0}
 .row.tr .ttl{font-size:13px;font-weight:500}
 .row.tr .nt{font-size:12px}
 .row.tr .sign{width:28px;height:28px;font-size:14px;margin-top:2px}
-.row.tr.sel .card{border-color:var(--green);box-shadow:none}
+.row.tr.sel .card{border-color:var(--sel,var(--gold));box-shadow:none}
 /* expanded body */
 .body{padding:0 14px 14px;display:flex;flex-direction:column;gap:12px}
 .row.tr .body{padding-top:4px}
@@ -827,7 +827,7 @@ svg{flex-shrink:0}
 /* pins */
 .pinw{background:none;border:0}
 .pin{position:absolute;left:0;top:0;transform:translate(-50%,-50%);width:32px;height:32px;border-radius:50%;background:var(--green);color:var(--paper);border:2px solid var(--paper);font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px color-mix(in srgb,var(--ink) 25%,transparent);transition:width .15s,height .15s,background .15s}
-.pin.sel{width:42px;height:42px;font-size:16px;background:var(--gold);box-shadow:0 0 0 8px color-mix(in srgb,var(--gold) 25%,transparent)}
+.pin.sel{width:42px;height:42px;font-size:16px;background:var(--sel,var(--gold));box-shadow:0 0 0 8px color-mix(in srgb,var(--sel,var(--gold)) 25%,transparent)}
 .pin.dim{opacity:.35}
 .pin.daypin{width:auto;height:30px;padding:0 9px;border-radius:999px;font-size:12px;white-space:nowrap}
 .leaflet-marker-icon.on{z-index:900!important}
@@ -879,7 +879,7 @@ html.touch .grab{display:block;flex-shrink:0;touch-action:none;user-select:none;
 .sheethead h1{margin:0;font-family:var(--serif);font-size:21px;font-weight:500;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sheethead .meta{display:none}
 html.touch .sc-wrap{display:block;flex-shrink:0;padding:0 12px 12px}
-.sc{padding:12px;border-radius:18px;background:var(--paper);border:1px solid var(--green);display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.sc{padding:12px;border-radius:18px;background:var(--paper);border:1px solid var(--sel,var(--gold));display:flex;flex-wrap:wrap;align-items:center;gap:10px}
 .badge{width:30px;height:30px;flex-shrink:0;border-radius:50%;background:var(--gold);color:var(--paper);font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center}
 .sct{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .sct .eb{font-size:12px;color:var(--brown)}
@@ -986,7 +986,7 @@ html.tab .card{margin:0}
 html.tab .row.dim .card{opacity:1}
 html.tab .head{padding:14px;gap:5px}
 html.tab .idot{display:flex;width:22px;height:22px;border-radius:50%;background:var(--green);color:var(--paper);font-size:12px;font-weight:600;align-items:center;justify-content:center}
-html.tab .row.sel .idot{background:var(--gold)}
+html.tab .row.sel .idot{background:var(--sel,var(--gold))}
 html.tab .phb{height:100px}
 html.tab .row.tr{grid-column:1/-1}
 html.tab .row.tr .card{border:0;background:transparent;border-radius:0;overflow:visible}
@@ -999,7 +999,7 @@ html.tab .row.tr .tk{display:inline}
 html.tab .row.tr .ttl{font-size:12px;color:var(--ink);flex-shrink:0;max-width:45%}
 html.tab .row.tr .nt{display:block;font-size:12px;flex-shrink:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 html.tab .row.tr .body{background:var(--paper);border:1px dashed var(--dash);border-radius:12px;padding:12px 14px;margin:4px 0 6px}
-html.tab .row.tr.sel .head .ttl{color:var(--green);font-weight:600}
+html.tab .row.tr.sel .head .ttl{color:var(--sel,var(--gold));font-weight:600}
 
 /* lightbox */
 dialog#lb{border:0;padding:0;border-radius:20px;background:var(--paper);color:var(--ink);max-width:min(960px,calc(100vw - 32px));width:100%;box-shadow:0 20px 60px rgba(0,0,0,.35)}

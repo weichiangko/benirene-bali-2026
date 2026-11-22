@@ -19,11 +19,12 @@
     warn: '提醒文字',
     dash: '交通項目的虛線框',
     handle: '手機面板拖曳把手',
+    selected: '選中：目前選取項目的外框與地圖標記（預設跟強調色相同）',
   };
   var CSS_VAR = {
     background: '--bg', surface: '--paper', text: '--ink', muted: '--muted', primary: '--green', primary_dark: '--green-d',
     accent: '--gold', accent_dark: '--brown', border: '--line', soft: '--soft', map: '--map', photo_bg: '--ph',
-    warn_bg: '--warnbg', warn: '--warn', dash: '--dash', handle: '--handle',
+    warn_bg: '--warnbg', warn: '--warn', dash: '--dash', handle: '--handle', selected: '--sel',
   };
   // 地圖：底圖（Esri 圖磚）＋色調。map_style 是一組起點，map 物件可逐項微調。
   var ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/';
@@ -110,7 +111,7 @@
     theme = theme || {};
     var base = PRESETS[theme.preset] || PRESETS.bali;
     var colors = {}, k;
-    for (k in COLOR_KEYS) colors[k] = (theme.colors && HEX.test(theme.colors[k] || '')) ? theme.colors[k] : base.colors[k];
+    for (k in COLOR_KEYS) colors[k] = (theme.colors && HEX.test(theme.colors[k] || '')) ? theme.colors[k] : (base.colors[k] || colors.accent);
     var f = theme.fonts || {}, bf = base.fonts;
     var fonts = {
       display: FONT.test(f.display || '') ? f.display : bf.display,
