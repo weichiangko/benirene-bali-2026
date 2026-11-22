@@ -1,4 +1,4 @@
-const VERSION = 'v26';
+const VERSION = 'v27';
 const SHELL = `shell-${VERSION}`;
 const TILES = 'tiles-v1'; // 圖磚快取跨版本保留
 const PHOTOS = 'photos-v1';

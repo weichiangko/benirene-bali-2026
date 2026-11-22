@@ -20,7 +20,7 @@ async function rest(path, { method = 'GET', body, prefer } = {}) {
 const TEXT = {
   title: ['封面大標題', 60], subtitle: ['封面副標（一句話）', 120], travelers: ['同行的人', 60], destination: ['目的地（英文，顯示在封面小字）', 60],
   intro: ['封面介紹文字', 600], cover_caption: ['封面照片說明', 80], cover_focus: ['封面照片對齊位置，例如 center、center 30%、left top', 30],
-  prep_title: ['行前區塊標題', 40], prep_intro: ['行前區塊說明', 400],
+  prep_title: ['行前區塊標題', 40], prep_intro: ['行前區塊說明', 400], notes_title: ['須知分頁的名稱', 12],
 };
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -36,6 +36,7 @@ function brief(t) {
     start_date: t.start_date, end_date: t.end_date, intro: t.intro,
     cover_image: t.cover_image && !/^https?:/.test(t.cover_image) ? `${SITE}/${t.cover_image}` : t.cover_image,
     cover_caption: t.cover_caption, cover_focus: t.cover_focus, prep_title: t.prep_title, prep_intro: t.prep_intro,
+    notes_tab: { enabled: t.notes_enabled !== false, title: t.notes_title || '入境與須知' },
     theme: { name: theme.name, based_on: theme.preset, saved: t.theme || {}, resolved: theme },
     link: `${SITE}/#prep`,
   };
@@ -76,6 +77,7 @@ async function updateTrip(args) {
     if (!DATE.test(args[k]) || isNaN(Date.parse(args[k]))) throw new Error(`${k} 格式要是 YYYY-MM-DD`);
     patch[k] = args[k];
   }
+  if (args.notes_enabled !== undefined) patch.notes_enabled = !!args.notes_enabled;
   const s = patch.start_date !== undefined ? patch.start_date : t.start_date, e = patch.end_date !== undefined ? patch.end_date : t.end_date;
   if (s && e && e < s) throw new Error('結束日期不能早於出發日期');
   // 封面照片：行程裡某個項目的照片、網路圖片、或 base64

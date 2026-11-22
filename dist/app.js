@@ -15,7 +15,7 @@ const CACHE_KEY='bali-trip-v2';
 const TABLES=['days','items','checks','notes','trip'];
 let raw=null,data={days:[],extras:[],checks:[],trip:null},synced=null,online=navigator.onLine;
 // 沒有資料庫設定時的封面預設值（資料庫 trip 表為準）
-const DEFAULT_TRIP={id:'main',title:'峇里島跨年',subtitle:'8 天 7 夜 · 烏布森林、火山日出、佩尼達島與海邊跨年',travelers:'Ben & Irene',destination:'Bali, Indonesia',start_date:'2026-12-26',end_date:'2027-01-02',intro:'',cover_image:'img/87c7e2e1df829e99.webp',cover_caption:'Mount Batur 火山日出',cover_focus:'center 45%',prep_title:'行前資料與預訂清單',prep_intro:'勾選和內容都會同步給所有看這個網站的人；店家是否接受預約，以實際確認信為準。',theme:{preset:'bali'}};
+const DEFAULT_TRIP={id:'main',title:'峇里島跨年',subtitle:'8 天 7 夜 · 烏布森林、火山日出、佩尼達島與海邊跨年',travelers:'Ben & Irene',destination:'Bali, Indonesia',start_date:'2026-12-26',end_date:'2027-01-02',intro:'',cover_image:'img/87c7e2e1df829e99.webp',cover_caption:'Mount Batur 火山日出',cover_focus:'center 45%',prep_title:'行前資料與預訂清單',notes_enabled:true,notes_title:'入境與須知',prep_intro:'勾選和內容都會同步給所有看這個網站的人；店家是否接受預約，以實際確認信為準。',theme:{preset:'bali'}};
 const lsGet=k=>{try{return localStorage.getItem(k)}catch(e){return null}},lsSet=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
 
 function splitTime(rawT){const t=plain(rawT).replace(/左 右/g,'左右').replace(/（\s+/g,'（').replace(/\s+（/g,'（');const m=t.match(/\d{1,2}:\d{2}/);if(!m)return{start:'',end:'',approx:false,ttext:t,range:t};let before=t.slice(0,m.index).trim(),after=t.slice(m.index+m[0].length).trim();const approx=/^約/.test(before);before=before.replace(/^約/,'').trim();after=after.replace(/^[-–→~]\s*/,'').trim();return{start:m[0],end:[before,after].filter(Boolean).join(' '),approx,ttext:'',range:t}}
@@ -133,6 +133,17 @@ function linkify(t){const parts=[];let s=String(t??'').replace(/\[([^\]\n]+)\]\(
  s=s.replace(/https?:\/\/[^\s<>"'（）)｜|，,。]+/g,u=>{u=u.replace(/[.;:；：]+$/,'');parts.push(lkBtn(u,siteName(u)));return `\u0000${parts.length-1}\u0000`});
  // 網址拿掉後留下的「（房源： ）」「： 」這類空殼收乾淨
  return esc(s).replace(/\s+(?=\u0000)/g,' ').replace(/(\u0000\d+\u0000)\s+(?=[）)；。，])/g,'$1').replace(/\u0000(\d+)\u0000/g,(_,i)=>parts[+i])}
+// 須知：「時間：標題」這種短行當成步驟，下一段拆成條列；整段只有連結的收成按鈕；第一段若是說明就當前言
+const lkify=h=>String(h).replace(/<a ([^>]*)>(.*?)<\/a>/g,(_,attr,t)=>`<a class="lk" ${attr}>${t}<span aria-hidden="true">↗</span></a>`);
+function noteHtml(n){const ps=(n.paragraphs||[]).map(p=>String(p).trim()).filter(Boolean);
+ const isHead=h=>{const t=plain(h);return t.length<=28&&!/[。.]$/.test(t)&&!/<a /.test(h)};
+ const onlyLinks=h=>/<a /.test(h)&&!plain(h.replace(/<a [^>]*>.*?<\/a>/g,'')).replace(/[｜|、,，\s]/g,'');
+ const bullets=h=>h.split(/(?<=。)/).map(x=>x.trim()).filter(x=>plain(x)).map(x=>`<li>${lkify(x)}</li>`).join('');
+ let intro='',steps=[],refs=[],cur=null,rest=[];
+ ps.forEach((p,i)=>{if(onlyLinks(p)){refs.push(p);return}if(isHead(p)){const t=plain(p),m=t.match(/^(.+?)[：:]\s*(.+)$/),d=!m&&t.match(/^(\d{1,2}\/\d{1,2}(?:[-–]\d{1,2})?)\s*(.+)$/);cur={when:m?m[1]:d?d[1]:'',title:m?m[2]:d?d[2]:t,body:[]};steps.push(cur);return}
+  if(cur)cur.body.push(p);else if(!steps.length&&i===0)intro=p;else rest.push(p)});
+ if(!steps.length)return `<div class="nbody">${intro?`<ul class="nul">${bullets(intro)}</ul>`:''}${rest.length?`<ul class="nul">${rest.map(bullets).join('')}</ul>`:''}${refs.length?`<div class="nrefs"><span class="pgk">參考連結</span><span>${refs.map(lkify).join(' ')}</span></div>`:''}</div>`;
+ return `<div class="nbody">${intro?`<p class="nintro">${lkify(intro)}</p>`:''}<ol class="nsteps">${steps.map(st=>`<li><div class="nsh">${st.when?`<span class="nwhen">${esc(st.when)}</span>`:''}<b>${esc(st.title)}</b></div>${st.body.length?`<ul class="nul">${st.body.map(bullets).join('')}</ul>`:''}</li>`).join('')}</ol>${rest.length?`<ul class="nul">${rest.map(bullets).join('')}</ul>`:''}${refs.length?`<div class="nrefs"><span class="pgk">參考連結</span><span class="nrl">${refs.map(lkify).join('')}</span></div>`:''}</div>`}
 // 待辦依標題裡的日期排序（1 月排在 12 月之後），沒日期的照原順序放後面，已完成的沉到最下面
 const ckDate=c=>{const m=plain(c.title).match(/(\d{1,2})\/(\d{1,2})/);if(!m)return 9999;const mo=+m[1];return (mo<7?mo+12:mo)*40+ +m[2]};
 const ckSort=C=>[...C].sort((a,b)=>(a.done-b.done)||(ckDate(a)-ckDate(b))||(a.position-b.position));
@@ -149,7 +160,8 @@ function panelCover(){const t=data.trip||DEFAULT_TRIP,C=data.checks,done=C.filte
  const ebar=S.edit?`<div class="cvedit"><button type="button" class="ebtn" data-edittrip>✎ 編輯封面</button></div>`:'';
  const dps=dayPhotos(),cards=data.days.map((d,i)=>{const p=dps[i];return `<a class="dcard" href="#d${d.idx}"><span class="dimg">${p?`<img src="${esc(p.image)}" alt="" loading="lazy">`:''}<span class="dno">${pad(d.idx)}</span></span><span class="dtx"><small>DAY ${pad(d.idx)} · ${esc(d.date)}</small><b>${esc(d.title)}</b><span class="dar">${esc(d.area)}</span>${d.breakfast?`<span class="dbf">早餐｜${esc(d.breakfast)}</span>`:''}</span></a>`}).join('');
  const ckHtml=c=>`<div class="checkw"><label class="check ${c.done?'done':''}"><input type="checkbox" data-check="${esc(c.id)}" ${c.done?'checked':''} ${canEdit()?'':'disabled'}><span><strong>${linkify(c.title)}</strong><small>${linkify(c.detail)}</small></span></label>${S.edit?`<div class="ebar"><button type="button" class="ebtn" data-editcheck="${esc(c.id)}">✎ 編輯</button><button type="button" class="ebtn del" data-delcheck="${esc(c.id)}">刪除</button></div>`:''}</div>`;
- const notes=data.extras.map(n=>`<details class="det" ${data.extras.length===1?'open':''}><summary>${esc(n.title)}</summary><div class="dc">${(n.paragraphs||[]).map(p=>`<p>${p}</p>`).join('')}${S.edit?`<div class="ebar"><button type="button" class="ebtn" data-editnote="${esc(n.id)}">✎ 編輯</button><button type="button" class="ebtn del" data-delnote="${esc(n.id)}">刪除</button></div>`:''}</div></details>`).join('');
+ const notesOn=t.notes_enabled!==false,tab=notesOn?S.ptab:'prep';
+ const notes=data.extras.map(n=>`<details class="det" ${data.extras.length===1?'open':''}><summary>${esc(n.title)}</summary><div class="dc">${noteHtml(n)}${S.edit?`<div class="ebar"><button type="button" class="ebtn" data-editnote="${esc(n.id)}">✎ 編輯</button><button type="button" class="ebtn del" data-delnote="${esc(n.id)}">刪除</button></div>`:''}</div></details>`).join('');
  // 待辦與預訂入口合成一份清單：沒有日期的放「出發前・整趟」，其餘依標題日期歸到那一天
  const dayOf=c=>{const m=plain(c.title).match(/(\d{1,2})\/(\d{1,2})/);if(!m)return null;return data.days.find(d=>plain(d.date).startsWith(`${+m[1]}/${+m[2]}`))||null};
  const byDay=new Map(),general=[];ckSort(C).forEach(c=>{const d=dayOf(c);if(d){if(!byDay.has(d.id))byDay.set(d.id,[]);byDay.get(d.id).push(c)}else general.push(c)});
@@ -167,12 +179,12 @@ function panelCover(){const t=data.trip||DEFAULT_TRIP,C=data.checks,done=C.filte
 <section class="cv-sec cv-in"><div class="cv-head"><span class="eyebrow">THE JOURNEY</span><h2>旅程一覽</h2><p>${len} · 點選任一天看路線地圖與每站細節</p></div><div class="dgrid">${cards}</div>${S.edit?'<button type="button" class="addbtn" data-addday>＋ 新增一天</button>':''}</section>
 <section class="cv-sec cv-in" id="prepList"><div class="cv-head"><span class="eyebrow">BEFORE YOU GO</span><h2>${esc(t.prep_title||'行前資料與預訂清單')}</h2>${t.prep_intro?`<p>${esc(t.prep_intro)}</p>`:''}</div>
  <div class="pcard">
-  <div class="ptabs" role="tablist" aria-label="行前資料">
+  ${notesOn?`<div class="ptabs" role="tablist" aria-label="行前資料">
    <button type="button" role="tab" id="pt-prep" aria-controls="pp" aria-selected="${S.ptab==='prep'}" data-ptab="prep">待辦與預訂<span class="pn">${done}/${C.length}</span></button>
-   <button type="button" role="tab" id="pt-notes" aria-controls="pp" aria-selected="${S.ptab==='notes'}" data-ptab="notes"><span><span class="pl">入境與</span>須知</span><span class="pn">${data.extras.length}</span></button>
-  </div>
-  <div class="ppanel" id="pp" role="tabpanel" aria-labelledby="pt-${S.ptab}">
-  ${S.ptab==='prep'?`<div class="prog"><span id="progT">已確認 ${done} / ${C.length} 項 · 依日期排列，完成的排在每組最後</span><div class="bar"><i id="progB" style="width:${pct}%"></i></div></div><div class="pgs">${groups||'<p class="simple">還沒有待辦或預訂。</p>'}</div>${S.edit?'<button type="button" class="addbtn" data-addcheck>＋ 新增待辦（標題寫上日期，例如 12/30，會自動排到那一天）</button>':''}<p class="foot">預訂入口會開啟店家或票券的官方頁面；出發前請再核對最新規定。</p>`
+   <button type="button" role="tab" id="pt-notes" aria-controls="pp" aria-selected="${S.ptab==='notes'}" data-ptab="notes"><span>${esc(t.notes_title||'入境與須知')}</span><span class="pn">${data.extras.length}</span></button>
+  </div>`:''}
+  <div class="ppanel" id="pp" ${notesOn?`role="tabpanel" aria-labelledby="pt-${tab}"`:''}>
+  ${tab==='prep'?`<div class="prog"><span id="progT">已確認 ${done} / ${C.length} 項 · 依日期排列，完成的排在每組最後</span><div class="bar"><i id="progB" style="width:${pct}%"></i></div></div><div class="pgs">${groups||'<p class="simple">還沒有待辦或預訂。</p>'}</div>${S.edit?'<button type="button" class="addbtn" data-addcheck>＋ 新增待辦（標題寫上日期，例如 12/30，會自動排到那一天）</button>':''}<p class="foot">預訂入口會開啟店家或票券的官方頁面；出發前請再核對最新規定。</p>`
   :`<div class="notes">${notes||'<p class="simple">還沒有說明區塊。</p>'}</div>${S.edit?'<button type="button" class="addbtn" data-addnote>＋ 新增說明區塊</button>':''}`}
   </div>
  </div>

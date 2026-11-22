@@ -52,13 +52,15 @@ async function stdFetch({ id }) {
 const TOOLS = [
   ['get_itinerary', '讀取行程。不給 day 回傳封面摘要、全部天數的摘要、行前待辦清單與說明區塊；給 day 回傳那天每個項目的完整內容。編輯前先呼叫以取得 item id。', obj({ day: dayN }), itinerary, true],
   ['get_trip', '讀取封面（旅程標題、日期、介紹、封面照片）、行前區塊的標題與說明、目前主題（配色、字體、地圖風格），以及可用的主題與顏色欄位。', obj({}), ST.getTrip, true],
-  ['update_trip', '修改封面與行前區塊：旅程標題、副標、同行的人、目的地、出發／結束日期（封面倒數用）、介紹文字、封面照片、行前區塊標題與說明。只傳要改的欄位。封面照片可用 cover_from_item（行程中某項目的照片）、cover_image_url（網路圖片或 /api/upload 回傳網址）、cover_image_base64。', obj({
+  ['update_trip', '修改封面與行前區塊：旅程標題、副標、同行的人、目的地、出發／結束日期（封面倒數用）、介紹文字、封面照片、行前區塊標題與說明、須知分頁開關（國內行程關掉、國外行程打開）。只傳要改的欄位。封面照片可用 cover_from_item（行程中某項目的照片）、cover_image_url（網路圖片或 /api/upload 回傳網址）、cover_image_base64。', obj({
     title: str('封面大標題，例如「峇里島跨年」'), subtitle: str('封面副標，一句話'), travelers: str('同行的人，例如「Ben & Irene」'), destination: str('目的地英文，例如「Bali, Indonesia」，顯示在封面小字'),
     start_date: str('出發日期 YYYY-MM-DD'), end_date: str('回程日期 YYYY-MM-DD'), intro: str('封面介紹文字（2–3 句）'),
     cover_from_item: str('用這個項目 id 的照片當封面'), cover_photo_index: { type: 'integer', minimum: 1, description: '搭配 cover_from_item：第幾張照片，預設 1' },
     cover_image_url: str('封面照片網址；空字串表示不用照片'), cover_image_base64: str('封面照片 base64'), cover_caption: str('封面照片說明'),
     cover_focus: str('照片對齊位置（CSS object-position），例如 center、center 30%、left top；主體被裁到時調整'),
     prep_title: str('行前區塊標題'), prep_intro: str('行前區塊說明文字'),
+    notes_enabled: { type: 'boolean', description: '行前區塊要不要顯示「須知」分頁。出國行程用 true（簽證、入境申報、旅遊稅、海關等）；國內行程通常不需要，用 false，只留「待辦與預訂」' },
+    notes_title: str('須知分頁的名稱，預設「入境與須知」；例如日本可用「入境與須知」，國內長途可用「出發須知」'),
   }), ST.updateTrip],
   ['set_theme', '設計整個網站的主題（配色、字體、地圖底圖與色調），所有人立即看到。規劃新目的地或使用者想換風格時，請依目的地文化與封面照片自己設計一套主題：傳完整的 colors（全部欄位）、fonts（標題與內文各一個 Google Fonts 字體）、map_style 加上 map 細調（底圖、飽和、亮度、染色等，讓地圖色調跟主題一致），並取個 name（例如「羅馬・大理石與赭紅」）。preset 只是起點範例，不必只用預設。回傳 contrast_warnings 時請修正顏色再呼叫一次。', obj({
     name: str('這套主題的名稱，例如「羅馬・大理石與赭紅」'),
@@ -86,7 +88,7 @@ const TOOLS = [
   ['update_checklist_item', '修改或勾選行前待辦（done: true 表示已完成）。', obj({ check_id: str('待辦 id'), title: str('標題'), detail: str('說明'), done: { type: 'boolean' } }, ['check_id']), T.checklistUpdate],
   ['delete_checklist_item', '刪除行前待辦。', obj({ check_id: str('待辦 id') }, ['check_id']), T.checklistDelete],
   ['get_note_section', '讀取行前說明區塊（例如簽證與入境）的內容。', obj({ note_id: str('區塊 id') }, ['note_id']), T.getNote, true],
-  ['save_note_section', '新增或修改行前說明區塊。給 note_id 為修改，不給為新增。paragraphs 每段一個字串。', obj({ note_id: str('區塊 id'), title: str('標題'), paragraphs: { type: 'array', items: { type: 'string' } } }), T.saveNote],
+  ['save_note_section', '新增或修改「須知」分頁裡的說明區塊（簽證、入境申報、旅遊稅、海關等）。給 note_id 為修改，不給為新增。paragraphs 每段一個字串，網站會排成步驟清單：可先放一段前言；每個步驟用一行短標題「時間：要做的事」（例如「12/15 前：申請 e-VOA」，28 字內、不加句號），下一段寫內容，每句以「。」結尾會變成一個條列點；最後一段可以只放連結（[名稱](網址)，用｜分隔），會變成參考連結按鈕。國內行程通常不需要，可用 update_trip 的 notes_enabled: false 關掉須知分頁。', obj({ note_id: str('區塊 id'), title: str('標題'), paragraphs: { type: 'array', items: { type: 'string' } } }), T.saveNote],
   ['delete_note_section', '刪除行前說明區塊。', obj({ note_id: str('區塊 id') }, ['note_id']), T.deleteNote],
   ['add_photo', '在項目上新增照片。給 image_url（網路上的圖片網址，或先用 /api/upload 上傳本機圖片取得的網址）或 image_base64（小於約 3MB）。支援 JPEG、PNG、WebP、GIF，上限 8MB。第 1 張會顯示在地圖卡片上。', obj({ item_id: str('項目 id'), image_url: str('圖片網址'), image_base64: str('圖片的 base64（可含 data: 開頭）'), title: str('照片標題，預設用項目名稱'), caption: str('說明，例如「官方空間照」'), credit: str('作者／授權，例如「Wikimedia / CC BY 4.0」'), source: str('來源頁面網址'), position: { type: 'integer', minimum: 1, description: '放在第幾張；預設最後' } }, ['item_id']), T.addPhoto],
   ['update_photo', '修改照片的標題、說明、來源，或調整順序（move_to=1 設為封面）。', obj({ item_id: str('項目 id'), index: { type: 'integer', minimum: 1, description: '第幾張（get_item 的 photos.index）' }, title: str('標題'), caption: str('說明'), credit: str('作者／授權'), source: str('來源網址'), move_to: { type: 'integer', minimum: 1, description: '移到第幾張' } }, ['item_id', 'index']), T.updatePhoto],
