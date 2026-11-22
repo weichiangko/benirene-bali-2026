@@ -90,7 +90,7 @@ curl -s -X POST https://benirene-bali-2026.vercel.app/mcp -H 'Content-Type: appl
 - 網站風格：`set_theme`。不要只套預設主題，請依目的地自己設計：
   1. 從目的地的文化、建築、自然色彩與封面照片的色調，挑 1 個主色（深、可放白字）、1 個強調色（地圖路線與重點，要在地圖上醒目）、淺色背景與卡片色。
   2. 傳完整的 `colors`（17 個欄位都給，`selected` 是選中項目的外框與標記色）、`fonts`（標題一個有個性的 Google Fonts 字體＋內文一個易讀字體，標明 serif／sans）、`map_style`，再取個 `name`。
-  3. 地圖也要跟著主題：`map_style` 選起點（natural、muted、mono、warm、cool、vintage、pastel、duotone、ink、night、terrain、satellite、ocean），再用 `map` 細調 `base`（street、topo、light_gray、dark_gray、satellite、ocean）、`saturation`、`brightness`、`contrast`、`hue_rotate`、`sepia`、`grayscale`、`tint`（#RRGGBB 或 accent 等主題色名）＋`tint_strength`、`label_opacity`。路線用 accent 色，底圖別搶走路線的顏色。
+  3. 地圖也要跟著主題：`map_style` 選起點（natural、muted、mono、warm、cool、vintage、pastel、duotone、ink、night、terrain、satellite、ocean），再用 `map` 細調 `base`（street、topo、light_gray、dark_gray、satellite、ocean）、`saturation`、`brightness`、`contrast`、`hue_rotate`、`sepia`、`grayscale`、`tint`（#RRGGBB 或 accent 等主題色名）＋`tint_strength`、`label_opacity`。路線用 accent 色，底圖別搶走路線的顏色。地圖色調和主題是同一套：`tint` 請用主題顏色名稱（例如 `primary`、`accent`），改配色時地圖會自動跟著變；底圖要淡、低飽和，讓路線和標記跳出來。
   4. 回傳 `contrast_warnings` 時調整顏色再呼叫一次，直到沒有警告。
   - 例：羅馬 → 標題 Cinzel 或 Cormorant Garamond（serif）、主色深赭紅、強調色金黃、背景大理石米白、地圖 warm；英國 → Playfair Display、墨黑主色、郵筒紅強調、白底、地圖 mono。
 

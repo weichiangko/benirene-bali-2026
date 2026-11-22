@@ -76,30 +76,35 @@
       colors: { background: '#f5f2ea', surface: '#fffdf8', text: '#223c35', muted: '#5d6c65', primary: '#214f43', primary_dark: '#163a31', accent: '#a76c3f', accent_dark: '#8a5530', border: '#dce1d6', soft: '#e8eee5', map: '#e4eadd', photo_bg: '#dfe6d8', warn_bg: '#f5e8da', warn: '#7d4a24', dash: '#c9b39c', handle: '#b9c1b4' },
       fonts: { display: 'Cormorant Garamond', display_kind: 'serif', body: 'system-sans', body_kind: 'sans' },
       map_style: 'natural',
+      map: { base: 'street', saturation: 10, brightness: 110, contrast: 90, tint: 'primary', tint_strength: 7 },
     },
     british: {
       name: '英倫・紅黑白', description: '郵筒紅＋墨黑＋白，高對比的英式襯線標題，黑白地圖',
       colors: { background: '#f6f4ef', surface: '#ffffff', text: '#141414', muted: '#5b5b5b', primary: '#141414', primary_dark: '#000000', accent: '#c8102e', accent_dark: '#9b0d23', border: '#e1ddd5', soft: '#efece5', map: '#ecebe7', photo_bg: '#e4e2dc', warn_bg: '#f8e4e6', warn: '#8e0b20', dash: '#c9c2b8', handle: '#bdb8b0' },
       fonts: { display: 'Playfair Display', display_kind: 'serif', body: 'Libre Franklin', body_kind: 'sans' },
       map_style: 'mono',
+      map: { base: 'street', grayscale: 100, brightness: 108, contrast: 90 },
     },
     kyoto: {
       name: '京都・藍與朱', description: '藍染深藍＋鳥居朱紅，明朝體標題，和紙底色',
       colors: { background: '#f3efe6', surface: '#fbf8f1', text: '#1f2433', muted: '#5f6372', primary: '#23305a', primary_dark: '#161f3d', accent: '#c0392b', accent_dark: '#8f2a1f', border: '#ddd6c8', soft: '#ebe5d8', map: '#ece6d9', photo_bg: '#e3dccd', warn_bg: '#f6e3dc', warn: '#8f2a1f', dash: '#c8b9a3', handle: '#bdb5a6' },
       fonts: { display: 'Shippori Mincho', display_kind: 'serif', body: 'system-sans', body_kind: 'sans' },
       map_style: 'muted',
+      map: { base: 'street', saturation: 15, brightness: 108, contrast: 92, tint: 'primary', tint_strength: 9 },
     },
     nordic: {
       name: '北歐・極簡', description: '冷灰白＋深藍灰，無襯線字體，乾淨留白',
       colors: { background: '#f3f4f3', surface: '#ffffff', text: '#1d2327', muted: '#66717a', primary: '#2f4858', primary_dark: '#1f323e', accent: '#b46a3a', accent_dark: '#8f5530', border: '#dfe3e4', soft: '#eaeeef', map: '#e9eced', photo_bg: '#e1e5e6', warn_bg: '#f6ebe2', warn: '#8a5532', dash: '#c3cbcf', handle: '#bcc4c8' },
       fonts: { display: 'Inter Tight', display_kind: 'sans', body: 'Inter', body_kind: 'sans' },
       map_style: 'muted',
+      map: { base: 'street', saturation: 15, brightness: 108, contrast: 92, tint: 'primary', tint_strength: 9 },
     },
     mediterranean: {
       name: '地中海・藍白陶土', description: '愛琴海藍＋陶土橘，現代襯線標題，陽光白',
       colors: { background: '#f7f1e8', surface: '#fffaf2', text: '#2a2622', muted: '#6b625a', primary: '#1f4e79', primary_dark: '#143557', accent: '#c96a3f', accent_dark: '#9a4d2b', border: '#e6dccd', soft: '#f0e7da', map: '#efe7da', photo_bg: '#e8dfd1', warn_bg: '#f7e4d8', warn: '#8a4325', dash: '#d3bfa6', handle: '#c8bba8' },
       fonts: { display: 'DM Serif Display', display_kind: 'serif', body: 'DM Sans', body_kind: 'sans' },
       map_style: 'warm',
+      map: { base: 'street', saturation: 25, sepia: 15, brightness: 106, contrast: 92, tint: 'accent', tint_strength: 6 },
     },
   };
 
@@ -119,10 +124,13 @@
       body: FONT.test(f.body || '') ? f.body : bf.body,
       body_kind: f.body_kind === 'serif' || f.body_kind === 'sans' ? f.body_kind : (FONT.test(f.body || '') ? 'sans' : bf.body_kind),
     };
+    // 地圖色調是主題的一部分：map 細調 ＞ 主題內建的地圖色調（沒換 map_style 時）＞ map_style 起點 ＞ 預設值
     var style = MAP_STYLES[theme.map_style] ? theme.map_style : base.map_style, st = MAP_STYLES[style], mo = theme.map || {}, m = { style: style };
-    m.base = MAP_BASES[mo.base] ? mo.base : st.base;
-    for (k in MAP_ADJUST) { var a = MAP_ADJUST[k], v = mo[k] != null ? +mo[k] : (st[k] != null ? st[k] : a[3]); m[k] = isNaN(v) ? a[3] : Math.max(a[1], Math.min(a[2], v)); }
-    var tint = mo.tint != null ? mo.tint : st.tint || '';
+    var pm = style === base.map_style ? (base.map || {}) : {};
+    var pick = function (k) { return mo[k] != null && mo[k] !== '' ? mo[k] : pm[k] != null ? pm[k] : st[k]; };
+    m.base = MAP_BASES[pick('base')] ? pick('base') : 'street';
+    for (k in MAP_ADJUST) { var a = MAP_ADJUST[k], pv = pick(k), v = pv != null ? +pv : a[3]; m[k] = isNaN(v) ? a[3] : Math.max(a[1], Math.min(a[2], v)); }
+    var tint = pick('tint') || '';
     if (tint && COLOR_KEYS[tint]) tint = colors[tint]; // 可用主題顏色名稱，例如 accent
     m.tint = HEX.test(tint) ? tint : '';
     return { preset: PRESETS[theme.preset] ? theme.preset : 'bali', name: theme.name || base.name, colors: colors, fonts: fonts, map_style: style, map: m };

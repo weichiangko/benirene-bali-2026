@@ -66,9 +66,9 @@ const TOOLS = [
     colors: { type: 'object', additionalProperties: false, properties: Object.fromEntries(Object.entries(THEMES.COLOR_KEYS).map(([k, d]) => [k, { type: 'string', description: `${d}。#RRGGBB；空字串表示回到起點範例的顏色` }])), description: '配色。background／surface 用淺色（文字是深色）；primary 要夠深（按鈕上的字是 surface 色）；accent 用來畫地圖路線與重點，要在地圖上醒目；map 是地圖底色與手機狀態列色' },
     fonts: { type: 'object', additionalProperties: false, properties: { display: str('標題字體（Google Fonts 英文名稱），例如 Playfair Display、Cinzel、Cormorant Garamond、Noto Serif TC'), display_kind: { type: 'string', enum: ['serif', 'sans'], description: '標題字體是襯線或無襯線（中文字會用對應的宋體或黑體）' }, body: str('內文字體，例如 Inter、DM Sans；system-sans 為裝置字體（最快）'), body_kind: { type: 'string', enum: ['serif', 'sans'] } } },
     map_style: { type: 'string', enum: Object.keys(THEMES.MAP_STYLES), description: '地圖風格起點（換風格會清掉先前的 map 細調）：' + Object.entries(THEMES.MAP_STYLES).map(([k, v]) => `${k}＝${v.name}`).join('、') },
-    map: { type: 'object', additionalProperties: false, description: '地圖細調，在 map_style 之上逐項覆蓋；傳空字串表示回到風格預設。建議依目的地與主題色調整：例如海島用 ocean 或 tint 藍綠、古城用 vintage 或 sepia、極簡主題用 light_gray＋tint accent（雙色）。', properties: {
+    map: { type: 'object', additionalProperties: false, description: '地圖細調。地圖色調是主題的一部分：每個 preset 都內建搭配好的地圖色調，只改顏色時地圖會自動跟著主題色；要微調才傳這裡，逐項覆蓋，傳空字串表示回到預設。建議依目的地與主題色調整：例如海島用 ocean 或 tint 藍綠、古城用 vintage 或 sepia、極簡主題用 light_gray＋tint accent（雙色）。', properties: {
       base: { type: 'string', enum: Object.keys(THEMES.MAP_BASES), description: '底圖：' + Object.entries(THEMES.MAP_BASES).map(([k, v]) => `${k}＝${v.name}`).join('、') },
-      tint: str('染色顏色：#RRGGBB，或主題顏色名稱（accent、primary、map…）。保留地圖明暗、換成這個色調'),
+      tint: str('染色顏色：優先用主題顏色名稱（primary、accent、map…），地圖會跟著主題配色一起變；也可用 #RRGGBB。保留地圖明暗、換成這個色調'),
       ...Object.fromEntries(Object.entries(THEMES.MAP_ADJUST).map(([k, [d, lo, hi]]) => [k, { type: 'number', minimum: lo, maximum: hi, description: d }])),
     } },
     reset: { type: 'boolean', description: 'true 表示清除所有自訂，只保留 preset' },
