@@ -67,7 +67,7 @@ function needRoutes(){if(!sb||!online||!raw)return;const bad=data.days.some(d=>(
 function rebuild(){build(raw);if(S.day>data.days.length)S.day=data.days.length||0;const d=day();if(d&&S.sel&&!d.items.some(x=>x.id===S.sel))S.sel=(d.pins[0]||d.items[0]||{}).id||null;renderChrome();renderPanel();drawMap();updateStatus();needRoutes()}
 
 /* ---------- 狀態 ---------- */
-const S={aiTab:'claude',day:1,sel:null,open:new Set(),all:false,rain:false,panel:true,snap:null,search:false,edit:lsGet('bali-edit')==='1',picking:null};
+const S={ptab:lsGet('bali-ptab')==='notes'?'notes':'prep',aiTab:'claude',day:1,sel:null,open:new Set(),all:false,rain:false,panel:true,snap:null,search:false,edit:lsGet('bali-edit')==='1',picking:null};
 let map,overlay,markers={},drag=null;
 const mqDesk=matchMedia('(min-width:1100px)'),mqPhone=matchMedia('(max-width:699px)');
 const L_=()=>mqDesk.matches?'desk':mqPhone.matches?'phone':'tab';
@@ -123,6 +123,13 @@ function panelDay(d){const n=pad(d.idx),cnt=d.pins.length;
  const addTop=S.edit?`<button type="button" class="pill addpill" data-add="${d.id}">＋ 新增景點</button>`:'';
  return grab(d.title,`${d.area} · ${cnt} 個地標`)+`<div class="sc-wrap">${curSheet(d)}</div><div class="scroll" id="scroll"><header class="dh only-desk"><span class="eyebrow">DAY ${n} · ${esc(d.date)}</span><h1>${esc(d.title)}</h1><span class="meta">${esc(d.area)} · 2 人同行 · ${cnt} 個地標</span><p>${esc(d.note)}</p></header><p class="sum only-touch">${layout==='phone'?esc(d.area)+' · ':''}${esc(d.note)}</p>${addTop?`<div class="tools touchtools only-touch">${addTop}</div>`:''}${eday}<div class="tools only-desk">${addTop}<button class="pill rainbtn" data-rain aria-pressed="${S.rain}">雨天安排 ☂</button><button class="pill allbtn" data-all aria-pressed="${S.all}">${S.all?'全部收合':'全部展開'}</button></div><div class="tl">${d.items.length?d.items.map(rowHtml).join(''):`<p class="simple">這天還沒有項目。${S.edit?'點「新增景點」貼上 Google 地圖連結就能加入。':'按「編輯」即可新增，或請 AI 幫忙加入。'}</p>`}</div>${add}<div class="daybtns only-desk"><a href="${d.idx===1?'#prep':'#d'+(d.idx-1)}">${d.idx===1?'← 封面・行前':'← 前一天'}</a>${d.idx===N()?'':`<a class="next" href="#d${d.idx+1}">後一天 →</a>`}</div>${foot(d)}</div>`}
 function quickLinks(d){const seen=new Set();return d.items.filter(x=>x.bookUrl&&!seen.has(x.bookUrl)&&seen.add(x.bookUrl)).map(x=>ext(x.bookUrl,esc(x.ttl))).join('')}
+// 純文字裡的 [文字](網址) 與網址轉成可點的連結（其餘一律跳脫）
+function linkify(t){const parts=[];let s=String(t??'').replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g,(_,a,u)=>{parts.push([a,u]);return `\u0000${parts.length-1}\u0000`});
+ s=esc(s).replace(/https?:\/\/[^\s<>"'）)]+/g,u=>`<a href="${u}" target="_blank" rel="noopener noreferrer">${u.replace(/^https?:\/\/(www\.)?/,'').slice(0,40)}${u.length>48?'…':''}</a>`);
+ return s.replace(/\u0000(\d+)\u0000/g,(_,i)=>`<a href="${esc(parts[+i][1])}" target="_blank" rel="noopener noreferrer">${esc(parts[+i][0])} ↗</a>`)}
+// 待辦依標題裡的日期排序（1 月排在 12 月之後），沒日期的照原順序放後面，已完成的沉到最下面
+const ckDate=c=>{const m=plain(c.title).match(/(\d{1,2})\/(\d{1,2})/);if(!m)return 9999;const mo=+m[1];return (mo<7?mo+12:mo)*40+ +m[2]};
+const ckSort=C=>[...C].sort((a,b)=>(a.done-b.done)||(ckDate(a)-ckDate(b))||(a.position-b.position));
 // 每天挑一張代表照片：優先景點、餐廳（略過交通、航班）
 const photoScore=x=>{const t=plain(x.type);return /景點|市集|海灘/.test(t)?3:/跨年|晚餐|音療/.test(t)?2.5:/早餐|住宿|休息|交通|退房|機場|入住|航|行程|按摩/.test(t)?0:2};
 function dayPhotos(){const used=new Set();return data.days.map(d=>{const c=d.items.filter(x=>x.photos&&x.photos[0]&&x.photos[0].image).sort((a,b)=>photoScore(b)-photoScore(a));const x=c.find(x=>!used.has(x.photos[0].image))||c[0];if(!x)return null;used.add(x.photos[0].image);return x.photos[0]})}
@@ -135,9 +142,13 @@ function panelCover(){const t=data.trip||DEFAULT_TRIP,C=data.checks,done=C.filte
  const img=t.cover_image?`<img class="hero-img" src="${esc(t.cover_image)}" alt="${esc(t.cover_caption||t.title)}" style="object-position:${esc(t.cover_focus||'center')}" fetchpriority="high">`:'';
  const ebar=S.edit?`<div class="cvedit"><button type="button" class="ebtn" data-edittrip>✎ 編輯封面</button></div>`:'';
  const dps=dayPhotos(),cards=data.days.map((d,i)=>{const p=dps[i];return `<a class="dcard" href="#d${d.idx}"><span class="dimg">${p?`<img src="${esc(p.image)}" alt="" loading="lazy">`:''}<span class="dno">${pad(d.idx)}</span></span><span class="dtx"><small>DAY ${pad(d.idx)} · ${esc(d.date)}</small><b>${esc(d.title)}</b><span class="dar">${esc(d.area)}</span>${d.breakfast?`<span class="dbf">早餐｜${esc(d.breakfast)}</span>`:''}</span></a>`}).join('');
- const ck=C.map(c=>`<div class="checkw"><label class="check ${c.done?'done':''}"><input type="checkbox" data-check="${esc(c.id)}" ${c.done?'checked':''} ${canEdit()?'':'disabled'}><span><strong>${esc(c.title)}</strong><small>${esc(c.detail)}</small></span></label>${S.edit?`<div class="ebar"><button type="button" class="ebtn" data-editcheck="${esc(c.id)}">✎ 編輯</button><button type="button" class="ebtn del" data-delcheck="${esc(c.id)}">刪除</button></div>`:''}</div>`).join('');
- const notes=data.extras.map(n=>`<details class="det"><summary>${esc(n.title)}</summary><div class="dc">${(n.paragraphs||[]).map(p=>`<p>${p}</p>`).join('')}${S.edit?`<div class="ebar"><button type="button" class="ebtn" data-editnote="${esc(n.id)}">✎ 編輯</button><button type="button" class="ebtn del" data-delnote="${esc(n.id)}">刪除</button></div>`:''}</div></details>`).join('');
- const books=data.days.map(d=>{const q=quickLinks(d);return q?`<div class="bk"><span class="bkd">D${d.idx}</span><span class="bkt"><b>${esc(d.title)}</b><span class="chips">${q}</span></span></div>`:''}).join('')||'<p class="simple">目前沒有需要另外預訂的入口。</p>';
+ const ckHtml=c=>`<div class="checkw"><label class="check ${c.done?'done':''}"><input type="checkbox" data-check="${esc(c.id)}" ${c.done?'checked':''} ${canEdit()?'':'disabled'}><span><strong>${linkify(c.title)}</strong><small>${linkify(c.detail)}</small></span></label>${S.edit?`<div class="ebar"><button type="button" class="ebtn" data-editcheck="${esc(c.id)}">✎ 編輯</button><button type="button" class="ebtn del" data-delcheck="${esc(c.id)}">刪除</button></div>`:''}</div>`;
+ const notes=data.extras.map(n=>`<details class="det" ${data.extras.length===1?'open':''}><summary>${esc(n.title)}</summary><div class="dc">${(n.paragraphs||[]).map(p=>`<p>${p}</p>`).join('')}${S.edit?`<div class="ebar"><button type="button" class="ebtn" data-editnote="${esc(n.id)}">✎ 編輯</button><button type="button" class="ebtn del" data-delnote="${esc(n.id)}">刪除</button></div>`:''}</div></details>`).join('');
+ // 待辦與預訂入口合成一份清單：沒有日期的放「出發前・整趟」，其餘依標題日期歸到那一天
+ const dayOf=c=>{const m=plain(c.title).match(/(\d{1,2})\/(\d{1,2})/);if(!m)return null;return data.days.find(d=>plain(d.date).startsWith(`${+m[1]}/${+m[2]}`))||null};
+ const byDay=new Map(),general=[];ckSort(C).forEach(c=>{const d=dayOf(c);if(d){if(!byDay.has(d.id))byDay.set(d.id,[]);byDay.get(d.id).push(c)}else general.push(c)});
+ const grp=(label,sub,items,links,key)=>`<div class="pg" ${key?`data-pg="${key}"`:''}><div class="pgh"><span class="pgd">${label}</span><span class="pgt">${sub}</span></div><div class="pgb">${items.length?`<div class="checks">${items.map(ckHtml).join('')}</div>`:''}${links?`<div class="pgl"><span class="pgk">預訂入口</span><span class="chips">${links}</span></div>`:''}</div></div>`;
+ const groups=[general.length?grp('出發前','<b>整趟旅程</b><small>住宿、網卡、交通等</small>',general,'',''):'',...data.days.map(d=>{const its=byDay.get(d.id)||[],q=quickLinks(d);return its.length||q?grp(`D${d.idx}`,`<b>${esc(d.title)}</b><small>${esc(d.date)}</small>`,its,q,d.idx):''})].join('');
  return `<div class="scroll cover" id="scroll">
 <section class="hero${img?'':' noimg'}${S.heroAnim?' anim':''}">${img}<div class="hero-shade"></div>
  <div class="hero-in cv-in">
@@ -149,10 +160,15 @@ function panelCover(){const t=data.trip||DEFAULT_TRIP,C=data.checks,done=C.filte
 <section class="cv-intro cv-in">${t.intro?`<p class="lede">${esc(t.intro)}</p>`:''}<dl class="stats"><div><dt>天數</dt><dd>${len}</dd></div><div><dt>地點</dt><dd>${pins}<small> 站</small></dd></div><div><dt>美食</dt><dd>${eats}<small> 家</small></dd></div><div><dt>行前準備</dt><dd>${done}<small> / ${C.length}</small></dd></div></dl></section>
 <section class="cv-sec cv-in"><div class="cv-head"><span class="eyebrow">THE JOURNEY</span><h2>旅程一覽</h2><p>${len} · 點選任一天看路線地圖與每站細節</p></div><div class="dgrid">${cards}</div>${S.edit?'<button type="button" class="addbtn" data-addday>＋ 新增一天</button>':''}</section>
 <section class="cv-sec cv-in" id="prepList"><div class="cv-head"><span class="eyebrow">BEFORE YOU GO</span><h2>${esc(t.prep_title||'行前資料與預訂清單')}</h2>${t.prep_intro?`<p>${esc(t.prep_intro)}</p>`:''}</div>
- <div class="pgrid">
-  <div class="pcol"><div class="ptitle"><h3>出發前待辦</h3><span class="ring" style="--p:${pct}" role="img" aria-label="已完成 ${done} / ${C.length} 項"><b>${pct}%</b></span></div><div class="prog"><span id="progT">已確認 ${done} / ${C.length} 項</span><div class="bar"><i id="progB" style="width:${pct}%"></i></div></div><div class="checks">${ck}</div>${S.edit?'<button type="button" class="addbtn" data-addcheck>＋ 新增待辦</button>':''}</div>
-  <div class="pcol"><h3>入境與須知</h3><div class="notes">${notes||'<p class="simple">還沒有說明區塊。</p>'}</div>${S.edit?'<button type="button" class="addbtn" data-addnote>＋ 新增說明區塊</button>':''}
-   <h3>各日預訂入口</h3><div class="books">${books}</div><p class="foot">出發前請再核對官方網站的最新要求。</p></div>
+ <div class="pcard">
+  <div class="ptabs" role="tablist" aria-label="行前資料">
+   <button type="button" role="tab" id="pt-prep" aria-controls="pp" aria-selected="${S.ptab==='prep'}" data-ptab="prep">待辦與預訂<span class="pn">${done}/${C.length}</span></button>
+   <button type="button" role="tab" id="pt-notes" aria-controls="pp" aria-selected="${S.ptab==='notes'}" data-ptab="notes"><span><span class="pl">入境與</span>須知</span><span class="pn">${data.extras.length}</span></button>
+  </div>
+  <div class="ppanel" id="pp" role="tabpanel" aria-labelledby="pt-${S.ptab}">
+  ${S.ptab==='prep'?`<div class="prog"><span id="progT">已確認 ${done} / ${C.length} 項 · 依日期排列，完成的排在每組最後</span><div class="bar"><i id="progB" style="width:${pct}%"></i></div></div><div class="pgs">${groups||'<p class="simple">還沒有待辦或預訂。</p>'}</div>${S.edit?'<button type="button" class="addbtn" data-addcheck>＋ 新增待辦（標題寫上日期，例如 12/30，會自動排到那一天）</button>':''}<p class="foot">預訂入口會開啟店家或票券的官方頁面；出發前請再核對最新規定。</p>`
+  :`<div class="notes">${notes||'<p class="simple">還沒有說明區塊。</p>'}</div>${S.edit?'<button type="button" class="addbtn" data-addnote>＋ 新增說明區塊</button>':''}`}
+  </div>
  </div>
 </section>
 <section class="cv-sec cv-in">${aiBox()}<details class="det" id="hist"><summary>修改紀錄（可還原）</summary><div class="dc" id="histList"><p class="simple">展開後載入…</p></div></details>${foot(null)}</section>
@@ -438,13 +454,14 @@ document.addEventListener('toggle',e=>{if(e.target.id==='hist'&&e.target.open)lo
 
 /* ---------- events ---------- */
 document.addEventListener('click',e=>{
- const t=e.target.closest('[data-pick],[data-step],[data-photo],[data-showmap],[data-rain],[data-all],[data-go],[data-edit],[data-move],[data-del],[data-add],[data-editday],[data-editcheck],[data-delcheck],[data-addcheck],[data-editnote],[data-delnote],[data-addnote],[data-addday],[data-restore],[data-copyai],[data-copy],[data-aitab],[data-edittrip],[data-scrollto]');
+ const t=e.target.closest('[data-pick],[data-step],[data-photo],[data-showmap],[data-rain],[data-all],[data-go],[data-edit],[data-move],[data-del],[data-add],[data-editday],[data-editcheck],[data-delcheck],[data-addcheck],[data-editnote],[data-delnote],[data-addnote],[data-addday],[data-restore],[data-copyai],[data-copy],[data-aitab],[data-ptab],[data-edittrip],[data-scrollto]');
  if(!e.target.closest('.search,.msearch,#msBtn'))$$('.results').forEach(r=>r.classList.remove('show'));
  if(!e.target.closest('.dpick'))setDayMenu(false);else if(e.target.closest('#dmenu a'))setDayMenu(false);
  if(!t)return;const ds=t.dataset;
  if(ds.copyai!==undefined){copyAI();return}
  if(ds.copy){copyText(ds.copy,'已複製網址');return}
  if(ds.aitab){S.aiTab=ds.aitab;renderPanel();return}
+ if(ds.ptab){S.ptab=ds.ptab;lsSet('bali-ptab',ds.ptab);renderPanel();const b=document.getElementById('pt-'+ds.ptab);if(b)b.focus({preventScroll:true});return}
  if(ds.scrollto){const el=document.getElementById(ds.scrollto);if(el)el.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'start'});return}
  if(ds.edittrip!==undefined){openEditor('trip',data.trip||DEFAULT_TRIP);return}
  if(ds.pick)select(ds.pick,{toggle:true,pan:true});
@@ -469,6 +486,7 @@ document.addEventListener('click',e=>{
  else if(ds.restore){const h=histRows[+ds.restore];if(h&&guard()){t.disabled=true;restore(h).then(()=>{toast('已還原');loadHistory()}).catch(err=>{t.disabled=false;toast('還原失敗：'+(err.message||err))})}}});
 document.addEventListener('change',e=>{const c=e.target.closest('[data-check]');if(!c)return;const r=raw.checks.find(r=>r.id===c.dataset.check);if(!r)return;if(!guard()){c.checked=!c.checked;return}run(()=>save('checks',{...r,done:c.checked}))});
 document.addEventListener('keydown',e=>{
+ const tb=e.target.closest&&e.target.closest('.ptabs [role=tab]');if(tb&&(e.key==='ArrowRight'||e.key==='ArrowLeft')){e.preventDefault();const all=[...document.querySelectorAll('.ptabs [role=tab]')],i=all.indexOf(tb),n=all[(i+(e.key==='ArrowRight'?1:all.length-1))%all.length];n.click();return}
  const menu=$('#dmenu'),open=menu&&!menu.hidden;
  if(e.key==='Escape'&&S.picking){$('#pickX').click();return}
  if(e.key==='Escape'&&!$('#lb').open&&!$('#ed').open){closeSearch();if(open){setDayMenu(false);$('#mlabel').focus()}}

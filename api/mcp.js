@@ -82,7 +82,7 @@ const TOOLS = [
   ['update_day', '修改某一天的日期、標題、區域、摘要、早餐。', obj({ day: dayN, date: str('例如 "12/26 六"'), title: str('標題'), area: str('區域'), summary: str('當天摘要'), breakfast: str('早餐安排') }, ['day']), T.updateDay],
   ['add_day', '在行程最後新增一天。', obj({ date: str('日期'), title: str('標題'), area: str('區域'), summary: str('摘要'), breakfast: str('早餐') }, ['title']), T.addDay],
   ['delete_day', '刪除整天與其所有項目。破壞性操作，執行前請先向使用者確認。', obj({ day: dayN }, ['day']), T.deleteDay],
-  ['add_checklist_item', '新增行前待辦。', obj({ title: str('待辦事項'), detail: str('說明') }, ['title']), T.checklistAdd],
+  ['add_checklist_item', '新增行前待辦。標題開頭寫日期（例如「12/30 Klook 套票」），網站會把它排進那一天、和當天的預訂入口放在一起；沒寫日期的放在「出發前・整趟」。', obj({ title: str('待辦事項'), detail: str('說明') }, ['title']), T.checklistAdd],
   ['update_checklist_item', '修改或勾選行前待辦（done: true 表示已完成）。', obj({ check_id: str('待辦 id'), title: str('標題'), detail: str('說明'), done: { type: 'boolean' } }, ['check_id']), T.checklistUpdate],
   ['delete_checklist_item', '刪除行前待辦。', obj({ check_id: str('待辦 id') }, ['check_id']), T.checklistDelete],
   ['get_note_section', '讀取行前說明區塊（例如簽證與入境）的內容。', obj({ note_id: str('區塊 id') }, ['note_id']), T.getNote, true],
