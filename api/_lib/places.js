@@ -1,6 +1,6 @@
 // 解析 Google 地圖連結（含 maps.app.goo.gl 短網址）→ 地點名稱與座標。
 const ALLOWED = /(^|\.)(goo\.gl|g\.co|google\.[a-z.]+)$/i;
-const BALI = { lat: -8.45, lon: 115.2, box: [-9.0, -7.9, 114.4, 115.8] };
+const { UA } = require('./env');
 const fix = n => +(+n).toFixed(6);
 const ok = (a, b) => Math.abs(a) <= 90 && Math.abs(b) <= 180;
 
@@ -18,22 +18,23 @@ function nameFrom(u) {
   if (q && !/^-?\d+\.\d+\s*,\s*-?\d+\.\d+$/.test(q)) return q.split(',')[0].trim();
   return '';
 }
-async function geocode(q) {
+// near：行程現有地點的中心 {lat, lng}，優先挑附近（約 ±0.8 度）的結果；沒有現有地點時不限範圍
+async function geocode(q, near) {
   if (!q) return null;
-  const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=${BALI.lat}&lon=${BALI.lon}&limit=6`, { headers: { 'User-Agent': 'bali-trip-site/1.0' } });
+  const bias = near ? `&lat=${near.lat}&lon=${near.lng}` : '';
+  const r = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}${bias}&limit=6`, { headers: { 'User-Agent': UA } });
   if (!r.ok) return null;
   const j = await r.json();
-  const [s, n, w, e] = BALI.box;
-  const fs = (j.features || []).filter(f => { const [lon, lat] = f.geometry.coordinates; return lat > s && lat < n && lon > w && lon < e; });
+  const fs = near ? (j.features || []).filter(f => { const [lon, lat] = f.geometry.coordinates; return Math.abs(lat - near.lat) < 0.8 && Math.abs(lon - near.lng) < 0.8; }) : [];
   const f = fs[0] || (j.features || [])[0];
   if (!f) return null;
   const p = f.properties || {};
-  return { latlng: [fix(f.geometry.coordinates[1]), fix(f.geometry.coordinates[0])], label: [p.name, p.street, p.city || p.county].filter(Boolean).join(', '), inBali: !!fs[0] };
+  return { latlng: [fix(f.geometry.coordinates[1]), fix(f.geometry.coordinates[0])], label: [p.name, p.street, p.city || p.county].filter(Boolean).join(', '), ...(near ? { nearby: !!fs[0] } : {}) };
 }
 
 
 // 解析 Google 地圖連結 → {url, name, latlng, approx}
-async function resolveLink(raw) {
+async function resolveLink(raw, near) {
   let url = new URL(String(raw || '').trim());
   for (let i = 0; i < 6; i++) {
     if (!/^https?:$/.test(url.protocol) || !ALLOWED.test(url.hostname)) throw new Error('只接受 Google 地圖連結');
@@ -45,7 +46,7 @@ async function resolveLink(raw) {
     const body = r.status === 200 ? (await r.text()).slice(0, 400000) : '';
     const m = body.match(/center=(-?\d+\.\d+)%2C(-?\d+\.\d+)/) || body.match(/\[null,null,(-?\d+\.\d+),(-?\d+\.\d+)\]/);
     if (m && ok(+m[1], +m[2])) return { url: url.href, latlng: [fix(m[1]), fix(m[2])], name };
-    const g = await geocode(name);
+    const g = await geocode(name, near);
     return { url: url.href, name, latlng: g ? g.latlng : null, approx: !!g };
   }
   return { url: url.href, latlng: coordsFrom(url.href), name: nameFrom(url) };

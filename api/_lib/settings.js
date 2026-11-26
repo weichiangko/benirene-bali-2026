@@ -2,9 +2,7 @@
 const { storeImage, fetchImage, decodeBase64 } = require('./photos');
 const THEMES = require('../../dist/themes.js');
 
-const URL_ = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-const KEY = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const SITE = 'https://benirene-bali-2026.vercel.app';
+const { SITE, SB_URL: URL_, SB_KEY: KEY } = require('./env');
 
 async function rest(path, { method = 'GET', body, prefer } = {}) {
   const r = await fetch(`${URL_}/rest/v1/${path}`, {

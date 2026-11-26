@@ -1,4 +1,4 @@
-/* Ben & Irene · Bali — 行程資料存在 Supabase，可直接在網站上新增／編輯／刪除 */
+/* 旅行行程網站 — 行程資料存在 Supabase，可直接在網站上新增／編輯／刪除 */
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const plain=s=>{const d=document.createElement('div');d.innerHTML=String(s??'');return d.textContent.replace(/\s+/g,' ').trim()};
@@ -9,7 +9,8 @@ const ICON={l:'<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24
 /* ---------- 資料：Supabase ＋ 本機快取 ---------- */
 const CFG=window.BALI_CONFIG||{};
 // 直接打開本機檔案（file://）時，伺服器功能改用正式網站
-const API=location.protocol==='file:'?'https://benirene-bali-2026.vercel.app':'';
+const ORIGIN=location.protocol==='file:'?(CFG.site||''):location.origin;
+const API=location.protocol==='file:'?ORIGIN:'';
 const sb=window.supabase&&CFG.url?window.supabase.createClient(CFG.url,CFG.key,{auth:{persistSession:false,autoRefreshToken:false}}):null;
 const CACHE_KEY='bali-trip-v2';
 const TABLES=['days','items','checks','notes','trip'];
@@ -104,17 +105,25 @@ function curFloat(d){if(!d||!d.pins.length)return'';const i=curIdx(d),x=d.pins[i
 function curSheet(d){if(!d||!d.pins.length)return'';const i=curIdx(d),x=d.pins[i];return `<div class="sc"><span class="badge">${x.n}</span><span class="sct"><span class="eb">${esc(x.range)} · ${esc(x.type)}</span><span class="ct">${esc(x.ttl)}</span></span><div class="scnav"><button class="mbtn" data-step="-1" aria-label="上一站">${ICON.l}</button><span class="cnt">第 ${i+1} / ${d.pins.length} 站</span><button class="mbtn" data-step="1" aria-label="下一站">${ICON.r}</button><a class="go" href="${x.dir}" target="_blank" rel="noopener noreferrer">導航 ↗</a></div></div>`}
 const grab=(title,meta)=>`<div class="grab" id="grab"><button class="handle" id="handle" aria-label="${S.snap==='full'?'收合行程清單':'展開行程清單'}"><span></span></button><div class="sheethead"><h1>${esc(title)}</h1>${meta?`<span class="meta">${esc(meta)}</span>`:''}</div></div>`;
 const fmtTime=s=>{if(!s)return'';const d=new Date(s);return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`};
-const foot=d=>`<p class="foot">時段為預排，尚未代訂 · 1 TWD ≈ 555 IDR · ${d?'<a href="#prep">行前預訂清單 ↗</a>':'<a href="#d1">回到 DAY 01 ↗</a>'}<br>${d&&d.mapNote?esc(d.mapNote)+' · ':''}最後更新：${fmtTime(data.updated)||'—'} · 照片依各圖來源標註<br><span class="sync" id="sync"></span> · <button type="button" class="linkbtn" data-copyai>複製「用 AI 編輯」指令</button></p>`;
+const foot=d=>`<p class="foot">時段為預排，尚未代訂 · ${d?'<a href="#prep">行前預訂清單 ↗</a>':'<a href="#d1">回到 DAY 01 ↗</a>'}<br>${d&&d.mapNote?esc(d.mapNote)+' · ':''}最後更新：${fmtTime(data.updated)||'—'} · 照片依各圖來源標註<br><span class="sync" id="sync"></span> · <button type="button" class="linkbtn" data-copyai>複製「用 AI 編輯」指令</button></p>`;
 const N=()=>data.days.length;
-const AI_PROMPT='閱讀 https://benirene-bali-2026.vercel.app/ai ，幫我連上 Ben & Irene 的峇里島行程';
-const MCP_URL='https://benirene-bali-2026.vercel.app/mcp';
+const SHORT=()=>plain((data.trip||{}).title)||'旅行行程';
+const LABEL=()=>[plain((data.trip||{}).travelers),SHORT()].filter(Boolean).join(' 的');
+// 一句話：AI 讀完 /ai 會把行程的 MCP 接到自己身上，再打開網站。分享給旅伴也是這一句
+const AI_PROMPT=()=>`閱讀 ${ORIGIN}/ai ，幫我連上「${LABEL()}」並打開網站`;
+const DUP_PROMPT=()=>`閱讀 ${ORIGIN}/duplicate ，幫我複製一份自己的行程網站`;
+const MCP_URL=ORIGIN+'/mcp';
 const aiBox=()=>`<section class="aibox"><h2>用 AI 編輯行程</h2><p>接上之後，直接用聊天告訴 AI 想改什麼，或問它「我能改什麼」。改完網站立刻更新，所有修改都能在修改紀錄還原。</p>
 <div class="aitabs" role="tablist"><button type="button" role="tab" class="aitab" aria-selected="${S.aiTab==='claude'}" data-aitab="claude">Claude 聊天</button><button type="button" role="tab" class="aitab" aria-selected="${S.aiTab==='chatgpt'}" data-aitab="chatgpt">ChatGPT</button><button type="button" role="tab" class="aitab" aria-selected="${S.aiTab==='code'}" data-aitab="code">Claude Code・Codex 等</button></div>
-${S.aiTab==='claude'?`<ol class="aisteps"><li>在 <a href="https://claude.ai/settings/connectors" target="_blank" rel="noopener">claude.ai → 設定 → 連接器</a> 按「新增自訂連接器」</li><li>名稱填「峇里島行程」，網址貼上下面這行，不用填 OAuth</li><li>回到對話，在輸入框的「＋」→ 連接器打開「峇里島行程」，就可以開始聊（手機 App 也能用）</li></ol><pre>${MCP_URL}</pre><button type="button" class="chip pri" data-copy="${MCP_URL}">複製網址</button><p class="aisub">免費方案可加 1 個自訂連接器；Team／Enterprise 需由管理員先加入。</p>`
-:S.aiTab==='chatgpt'?`<ol class="aisteps"><li>ChatGPT 網頁版 → 設定 → 應用程式（Apps）→ 進階設定，開啟「開發者模式」</li><li>按「建立應用程式」：名稱「峇里島行程」，MCP 伺服器網址貼上下面這行，驗證選「無」，勾選信任後建立</li><li>新對話的「＋」→ 更多 → 選「峇里島行程」，就可以開始聊</li></ol><pre>${MCP_URL}</pre><button type="button" class="chip pri" data-copy="${MCP_URL}">複製網址</button><p class="aisub">開發者模式需要付費方案。免費帳號：建立一個自訂 GPT，在「動作」用「從網址匯入」貼上 https://benirene-bali-2026.vercel.app/openapi.json ，驗證選「無」，隱私權政策填 https://benirene-bali-2026.vercel.app/privacy.html 。</p>`
-:`<p>把這句貼給 Claude Code、Codex、Cursor、Gemini CLI 等能執行指令的 AI，它會自己完成連線：</p><pre id="aiPrompt">${esc(AI_PROMPT)}</pre><button type="button" class="chip pri" data-copyai>複製這句</button>`}</section>`;
+${S.aiTab==='claude'?`<ol class="aisteps"><li>在 <a href="https://claude.ai/settings/connectors" target="_blank" rel="noopener">claude.ai → 設定 → 連接器</a> 按「新增自訂連接器」</li><li>名稱填「${esc(SHORT())}」，網址貼上下面這行，不用填 OAuth</li><li>回到對話，在輸入框的「＋」→ 連接器打開「${esc(SHORT())}」，就可以開始聊（手機 App 也能用）</li></ol><pre>${MCP_URL}</pre><button type="button" class="chip pri" data-copy="${MCP_URL}">複製網址</button><p class="aisub">免費方案可加 1 個自訂連接器；Team／Enterprise 需由管理員先加入。</p>`
+:S.aiTab==='chatgpt'?`<ol class="aisteps"><li>ChatGPT 網頁版 → 設定 → 應用程式（Apps）→ 進階設定，開啟「開發者模式」</li><li>按「建立應用程式」：名稱「${esc(SHORT())}」，MCP 伺服器網址貼上下面這行，驗證選「無」，勾選信任後建立</li><li>新對話的「＋」→ 更多 → 選「${esc(SHORT())}」，就可以開始聊</li></ol><pre>${MCP_URL}</pre><button type="button" class="chip pri" data-copy="${MCP_URL}">複製網址</button><p class="aisub">開發者模式需要付費方案。免費帳號：建立一個自訂 GPT，在「動作」用「從網址匯入」貼上 ${ORIGIN}/openapi.json ，驗證選「無」，隱私權政策填 ${ORIGIN}/privacy.html 。</p>`
+:`<p>把這句貼給 Claude Code、Codex、Cursor、Gemini CLI 等能執行指令的 AI，它會自己完成連線：</p><pre id="aiPrompt">${esc(AI_PROMPT())}</pre><button type="button" class="chip pri" data-copyai>複製這句</button><p class="aisub">想要一份自己的行程網站（自己的網址與資料庫，部署到你的 Vercel 帳號）？把這句貼給同一個 AI：</p><pre>${esc(DUP_PROMPT())}</pre><button type="button" class="chip" data-copy="${esc(DUP_PROMPT())}">複製這句</button>`}</section>`;
 async function copyText(v,msg){try{await navigator.clipboard.writeText(v)}catch(e){const t=document.createElement('textarea');t.value=v;document.body.appendChild(t);t.select();try{document.execCommand('copy')}catch(_){}t.remove()}toast(msg)}
-async function copyAI(){try{await navigator.clipboard.writeText(AI_PROMPT)}catch(e){const t=document.createElement('textarea');t.value=AI_PROMPT;document.body.appendChild(t);t.select();try{document.execCommand('copy')}catch(_){}t.remove()}toast('已複製，貼給 AI 即可')}
+// 分享：手機用系統分享，其他複製到剪貼簿。朋友把這句貼給自己的 AI，就會接好 MCP 並打開網站
+async function shareSite(){const text=AI_PROMPT();
+ if(navigator.share&&matchMedia('(pointer:coarse)').matches){try{await navigator.share({title:LABEL(),text});return}catch(e){if(e&&e.name==='AbortError')return}}
+ copyText(text,'已複製：傳給旅伴，請他貼給自己的 AI（Claude、ChatGPT、Codex…）')}
+async function copyAI(){try{await navigator.clipboard.writeText(AI_PROMPT())}catch(e){const t=document.createElement('textarea');t.value=AI_PROMPT();document.body.appendChild(t);t.select();try{document.execCommand('copy')}catch(_){}t.remove()}toast('已複製，貼給 AI 即可')}
 
 
 function panelDay(d){const n=pad(d.idx),cnt=d.pins.length;
@@ -171,7 +180,7 @@ function panelCover(){const t=data.trip||DEFAULT_TRIP,C=data.checks,done=C.filte
 <section class="hero${img?'':' noimg'}${S.heroAnim?' anim':''}">${img}<div class="hero-shade"></div>
  <div class="hero-in cv-in">
   <div class="hero-txt"><span class="hero-eb">${esc(t.destination)}${range?`<i></i>${range}`:''}</span><h1>${esc(t.title)}</h1>${t.subtitle?`<p class="hero-sub">${esc(t.subtitle)}</p>`:''}
-   <div class="hero-cta"><a class="cbtn pri" href="#d1">${ph&&ph.k==='during'?'看今天的行程':'從第一天開始'} <span aria-hidden="true">→</span></a><button type="button" class="cbtn ghost" data-scrollto="prepList">行前準備 ${done}/${C.length}</button></div></div>
+   <div class="hero-cta"><a class="cbtn pri" href="#d1">${ph&&ph.k==='during'?'看今天的行程':'從第一天開始'} <span aria-hidden="true">→</span></a><button type="button" class="cbtn ghost" data-scrollto="prepList">行前準備 ${done}/${C.length}</button><button type="button" class="cbtn ghost" data-share>分享給旅伴</button></div></div>
   <div class="hero-side">${t.travelers?`<span class="who">${esc(t.travelers)}</span>`:''}${cd}</div>
  </div>${t.cover_caption&&img?`<span class="hero-cap">${esc(t.cover_caption)}</span>`:''}${ebar}
 </section>
@@ -210,7 +219,9 @@ function renderChrome(){
  const tp=$('#togglePanel');tp.setAttribute('aria-expanded',S.panel);tp.setAttribute('aria-label',S.panel?'收合行程清單':'顯示行程清單');$('#tpFill').setAttribute('fill',S.panel?cv('--soft'):'none');
  ['#editT','#editM'].forEach(s=>{const b=$(s);if(b)b.setAttribute('aria-pressed',S.edit)});
  document.documentElement.classList.toggle('editing',S.edit);
- const tt=data.trip||{};document.title=d?`D${d.idx} ${plain(d.title)}｜${plain(tt.title)}`:`${plain(tt.travelers)}｜${plain(tt.title)}`;
+ const tt=data.trip||{};document.title=d?`D${d.idx} ${plain(d.title)}｜${plain(tt.title)}`:[plain(tt.travelers),plain(tt.title)].filter(Boolean).join('｜')||'旅行行程';
+ const br=$('.brand');if(br){const y=[tt.start_date,tt.end_date].filter(Boolean).map(s=>String(s).slice(0,4)).filter((v,i,a)=>a.indexOf(v)===i).join(' — ');
+  br.querySelector('b').textContent=plain(tt.travelers)||plain(tt.title)||'旅行行程';br.querySelector('small').textContent=[String(plain(tt.destination)||'').split(',')[0].toUpperCase(),y].filter(Boolean).join(' · ')}
 }
 function updateStatus(){const el=$('#sync');if(!el)return;el.textContent=!sb?'未連線到資料庫，顯示內建版本':online?(synced?`已同步 ${pad(synced.getHours())}:${pad(synced.getMinutes())}`:'同步中…'):'離線中：顯示上次同步的內容，暫時無法編輯'}
 function setSheet(h,anim=true){const p=$('#panel');p.classList.toggle('anim',anim);document.documentElement.style.setProperty('--sheet',h+'px');$('#mapbtn').classList.toggle('show',layout!=='desk'&&S.snap==='full'&&!drag)}
@@ -431,7 +442,7 @@ $('#edF').addEventListener('click',async e=>{
  if(e.target.closest('[data-clear-loc]'))setLoc(null,'已清除位置');
  if(e.target.closest('[data-find-name]')){const q=($('#f_title').value||'').trim();if(!q){$('#locBox').innerHTML=locHtml('','請先填名稱');$('#f_title').focus();return}
   $('#locBox').innerHTML='<span class="locno">搜尋中…</span>';const j=await api('q='+encodeURIComponent(q));
-  if(j&&j.latlng)setLoc(j.latlng,`找到：${j.label||q}${j.inBali===false?'（不在峇里島，請確認）':''}，可在地圖上調整`);else setLoc(null,`找不到「${q}」，請改貼 Google 地圖連結或在地圖上點選`)}
+  if(j&&j.latlng)setLoc(j.latlng,`找到：${j.label||q}${j.nearby===false?'（離行程其他地點很遠，請確認）':''}，可在地圖上調整`);else setLoc(null,`找不到「${q}」，請改貼 Google 地圖連結或在地圖上點選`)}
  if(e.target.closest('[data-pick-map]')){const keep=formVals(),st=edState,open=$('#edF details.more')?.open;$('#ed').close();startPick(ll=>{edState=st;keep.loc=`${ll[0]}, ${ll[1]}`;openEditor(st.kind,st.row,keep);if(open)$('#edF details.more').open=true;setLoc(ll,'已選好位置')},()=>{edState=st;openEditor(st.kind,st.row,keep)})}});
 // 依時間決定新項目的位置
 const minutes=s=>{const m=plain(s).match(/(\d{1,2}):(\d{2})/);return m?+m[1]*60+ +m[2]:null};
@@ -472,11 +483,12 @@ document.addEventListener('toggle',e=>{if(e.target.id==='hist'&&e.target.open)lo
 
 /* ---------- events ---------- */
 document.addEventListener('click',e=>{
- const t=e.target.closest('[data-pick],[data-step],[data-photo],[data-showmap],[data-rain],[data-all],[data-go],[data-edit],[data-move],[data-del],[data-add],[data-editday],[data-editcheck],[data-delcheck],[data-addcheck],[data-editnote],[data-delnote],[data-addnote],[data-addday],[data-restore],[data-copyai],[data-copy],[data-aitab],[data-ptab],[data-edittrip],[data-scrollto]');
+ const t=e.target.closest('[data-pick],[data-step],[data-photo],[data-showmap],[data-rain],[data-all],[data-go],[data-edit],[data-move],[data-del],[data-add],[data-editday],[data-editcheck],[data-delcheck],[data-addcheck],[data-editnote],[data-delnote],[data-addnote],[data-addday],[data-restore],[data-copyai],[data-share],[data-copy],[data-aitab],[data-ptab],[data-edittrip],[data-scrollto]');
  if(!e.target.closest('.search,.msearch,#msBtn'))$$('.results').forEach(r=>r.classList.remove('show'));
  if(!e.target.closest('.dpick'))setDayMenu(false);else if(e.target.closest('#dmenu a'))setDayMenu(false);
  if(!t)return;const ds=t.dataset;
  if(ds.copyai!==undefined){copyAI();return}
+ if(ds.share!==undefined){shareSite();return}
  if(ds.copy){copyText(ds.copy,'已複製網址');return}
  if(ds.aitab){S.aiTab=ds.aitab;renderPanel();return}
  if(ds.ptab){S.ptab=ds.ptab;lsSet('bali-ptab',ds.ptab);renderPanel();const b=document.getElementById('pt-'+ds.ptab);if(b)b.focus({preventScroll:true});return}

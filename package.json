@@ -1,0 +1,14 @@
+{
+  "name": "trip-site",
+  "private": true,
+  "description": "可離線使用、能讓任何 AI 透過 MCP 編輯的旅行行程網站",
+  "scripts": {
+    "build": "node scripts/setup-db.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "pg": "^8.13.1"
+  }
+}

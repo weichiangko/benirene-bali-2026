@@ -1,7 +1,6 @@
 // 依當天地點順序計算開車路線（OSRM），存進 days.route_geometry。
 // route_sig 記錄計算時的地點組合；網頁比對不符時才會改畫虛線。
-const URL_ = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-const KEY = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const { SB_URL: URL_, SB_KEY: KEY, UA } = require('./env');
 const OSRM = 'https://router.project-osrm.org/route/v1/driving/';
 
 async function rest(path, opt = {}) {
@@ -20,7 +19,7 @@ const sigOf = pts => pts.map(p => (+p[0]).toFixed(5) + ',' + (+p[1]).toFixed(5) 
 
 async function osrm(pts) {
   try {
-    const r = await fetch(`${OSRM}${pts.map(p => `${p[1]},${p[0]}`).join(';')}?overview=full&geometries=geojson`, { headers: { 'User-Agent': 'bali-trip-site/1.0 (+https://benirene-bali-2026.vercel.app/ai)' }, signal: AbortSignal.timeout(15000) });
+    const r = await fetch(`${OSRM}${pts.map(p => `${p[1]},${p[0]}`).join(';')}?overview=full&geometries=geojson`, { headers: { 'User-Agent': UA }, signal: AbortSignal.timeout(15000) });
     if (!r.ok) return null;
     const j = await r.json();
     return j.code === 'Ok' && j.routes && j.routes[0] ? j.routes[0].geometry.coordinates : null;

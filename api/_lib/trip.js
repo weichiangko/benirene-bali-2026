@@ -2,9 +2,7 @@
 const { resolveLink, geocode } = require('./places');
 const { storeImage, fetchImage, decodeBase64 } = require('./photos');
 
-const URL_ = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-const KEY = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const SITE = 'https://benirene-bali-2026.vercel.app';
+const { SITE, SB_URL: URL_, SB_KEY: KEY } = require('./env');
 
 async function rest(path, { method = 'GET', body, prefer } = {}) {
   const r = await fetch(`${URL_}/rest/v1/${path}`, {
@@ -98,10 +96,19 @@ async function search({ query }) {
 }
 
 /* ---------- 位置與排序 ---------- */
+// 行程現有地點的中心，讓「只給名稱」的搜尋偏向這趟旅程的區域
+async function tripCenter() {
+  try {
+    const pts = await rest('items?select=lat,lng&lat=not.is.null&lng=not.is.null');
+    if (!pts || !pts.length) return null;
+    const lat = pts.map(p => p.lat).sort((a, b) => a - b), lng = pts.map(p => p.lng).sort((a, b) => a - b);
+    return { lat: lat[lat.length >> 1], lng: lng[lng.length >> 1] }; // 中位數，不受零星遠點影響
+  } catch { return null; }
+}
 async function locate({ google_maps_url, place_name, lat, lng }) {
   if (lat != null && lng != null) return { latlng: [+lat, +lng], url: google_maps_url || '', name: '' };
-  if (google_maps_url) { const r = await resolveLink(google_maps_url); return { latlng: r.latlng, url: google_maps_url, name: r.name, approx: r.approx }; }
-  if (place_name) { const g = await geocode(place_name); return g ? { latlng: g.latlng, url: '', name: '', approx: true, label: g.label } : null; }
+  if (google_maps_url) { const r = await resolveLink(google_maps_url, await tripCenter()); return { latlng: r.latlng, url: google_maps_url, name: r.name, approx: r.approx }; }
+  if (place_name) { const g = await geocode(place_name, await tripCenter()); return g ? { latlng: g.latlng, url: '', name: '', approx: true, label: g.label } : null; }
   return null;
 }
 function posForTime(items, time, selfId) {
@@ -278,7 +285,7 @@ async function undoChange({ history_id }) {
 }
 
 module.exports = {
-  SITE, getItinerary, getItem, search, addPlace, updateItem, moveItem, updateDay, addDay, deleteDay,
+  SITE, tripCenter, getItinerary, getItem, search, addPlace, updateItem, moveItem, updateDay, addDay, deleteDay,
   deleteItem: ({ item_id }) => deleteRow('items', item_id, '項目'),
   checklistAdd, checklistUpdate, checklistDelete: ({ check_id }) => deleteRow('checks', check_id, '待辦'),
   getNote, saveNote, deleteNote: ({ note_id }) => deleteRow('notes', note_id, '說明區塊'),
