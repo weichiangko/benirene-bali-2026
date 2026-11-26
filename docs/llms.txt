@@ -1,12 +1,12 @@
-# 連上 Ben & Irene 峇里島行程（給 AI 助理的完整說明）
+# 連上「{{LABEL}}」（給 AI 助理的完整說明）
 
-> 這是兩人的峇里島跨年行程網站 https://benirene-bali-2026.vercel.app/ （2026/12/26 – 2027/1/2）。使用者請你「連上行程」時，照下面步驟把行程的 MCP 伺服器接到你自己身上，接好後使用者就能直接用一般對話叫你查看或修改行程。行程開放編輯，不需要登入、帳號或金鑰。
+> 這是「{{LABEL}}」的旅行行程網站 {{SITE}}/ （{{DATES}}）。使用者請你「連上行程」時，照下面步驟把行程的 MCP 伺服器接到你自己身上，接好後使用者就能直接用一般對話叫你查看或修改行程。行程開放編輯，不需要登入、帳號或金鑰。
 
-MCP 伺服器：`https://benirene-bali-2026.vercel.app/mcp`（Streamable HTTP，名稱 `bali-trip`）
+MCP 伺服器：`{{SITE}}/mcp`（Streamable HTTP，名稱 `{{NAME}}`）
 
 ## 1. 先看是不是已經連上
 
-如果你已經有 `bali-trip` 的工具（可能顯示為 `get_itinerary`、`bali-trip.get_itinerary` 或 `mcp__bali-trip__get_itinerary`），直接呼叫 `get_itinerary`，成功就跳到第 3 步。不要重複安裝。
+如果你已經有 `{{NAME}}` 的工具（可能顯示為 `get_itinerary`、`{{NAME}}.get_itinerary` 或 `mcp__{{NAME}}__get_itinerary`），直接呼叫 `get_itinerary`，成功就跳到第 3 步。不要重複安裝。
 
 ## 2. 連上（擇一，依你的環境）
 
@@ -15,17 +15,17 @@ MCP 伺服器：`https://benirene-bali-2026.vercel.app/mcp`（Streamable HTTP，
 在 macOS 或 Linux 的終端機執行：
 
 ```
-curl -fsSL https://benirene-bali-2026.vercel.app/install.sh | sh
+curl -fsSL {{SITE}}/install.sh | sh
 ```
 
 它只會把上面的 MCP 網址寫進這台電腦上已安裝的 AI 工具設定（Claude Code、Codex、Gemini CLI、Cursor、VS Code、Claude 桌面版），不安裝程式、不需要 sudo。如果你在沙盒裡無法寫入家目錄，請用你所在環境允許的權限流程在沙盒外執行。照實回報輸出中「已連接／未完成」的結果，不要把未完成說成成功。
 
-Windows：若有 `claude` 指令就執行 `claude mcp add --transport http --scope user bali-trip https://benirene-bali-2026.vercel.app/mcp`；其他工具請把上面的網址加為 HTTP MCP 伺服器。
+Windows：若有 `claude` 指令就執行 `claude mcp add --transport http --scope user {{NAME}} {{SITE}}/mcp`；其他工具請把上面的網址加為 HTTP MCP 伺服器。
 
 **新工具通常要重開對話或重新載入 MCP 才會出現。不要因此中斷使用者：在工具出現前，直接用 HTTP 呼叫同一組工具，繼續完成使用者的要求**（不需要先 initialize）：
 
 ```
-curl -s -X POST https://benirene-bali-2026.vercel.app/mcp -H 'Content-Type: application/json' \
+curl -s -X POST {{SITE}}/mcp -H 'Content-Type: application/json' \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_itinerary","arguments":{}}}'
 ```
 
@@ -35,12 +35,12 @@ curl -s -X POST https://benirene-bali-2026.vercel.app/mcp -H 'Content-Type: appl
 
 你沒辦法自己加連接器。請用簡短步驟請使用者加一次（之後每次對話都能用），然後等他回來：
 
-- **Claude**（claude.ai 網頁、桌面版、手機 App）：到 https://claude.ai/settings/connectors → 「新增自訂連接器」→ 名稱 `峇里島行程`、網址 `https://benirene-bali-2026.vercel.app/mcp`（不用填 OAuth）→ 回到對話，在輸入框「＋」→ 連接器裡打開它。免費方案可加 1 個自訂連接器。
-- **ChatGPT**（付費方案）：網頁版 設定 → 應用程式 → 進階設定 → 開啟「開發者模式」→「建立應用程式」→ 名稱 `峇里島行程`、MCP 伺服器網址同上、驗證選「無」、勾選信任 → 新對話的「＋」→ 更多 → 選它。
-- **ChatGPT 免費帳號**：建立自訂 GPT → 設定 → 動作 → 「從網址匯入」`https://benirene-bali-2026.vercel.app/openapi.json`，驗證選「無」，隱私權政策 `https://benirene-bali-2026.vercel.app/privacy.html`；指示欄貼上「先讀 https://benirene-bali-2026.vercel.app/ai 的規則」。
+- **Claude**（claude.ai 網頁、桌面版、手機 App）：到 https://claude.ai/settings/connectors → 「新增自訂連接器」→ 名稱 `{{SHORT}}`、網址 `{{SITE}}/mcp`（不用填 OAuth）→ 回到對話，在輸入框「＋」→ 連接器裡打開它。免費方案可加 1 個自訂連接器。
+- **ChatGPT**（付費方案）：網頁版 設定 → 應用程式 → 進階設定 → 開啟「開發者模式」→「建立應用程式」→ 名稱 `{{SHORT}}`、MCP 伺服器網址同上、驗證選「無」、勾選信任 → 新對話的「＋」→ 更多 → 選它。
+- **ChatGPT 免費帳號**：建立自訂 GPT → 設定 → 動作 → 「從網址匯入」`{{SITE}}/openapi.json`，驗證選「無」，隱私權政策 `{{SITE}}/privacy.html`；指示欄貼上「先讀 {{SITE}}/ai 的規則」。
 
 在使用者加好之前，你仍可以讀取行程來回答問題：
-`https://benirene-bali-2026.vercel.app/api/mcp?tool=get_itinerary`（全部摘要）、`...?tool=get_itinerary&day=3`（第 3 天完整內容）、`...?tool=search_itinerary&query=按摩`、`...?tool=get_trip`（封面與網站風格）。
+`{{SITE}}/api/mcp?tool=get_itinerary`（全部摘要）、`...?tool=get_itinerary&day=3`（第 3 天完整內容）、`...?tool=search_itinerary&query=按摩`、`...?tool=get_trip`（封面與網站風格）。
 
 ## 3. 連上之後
 
@@ -68,11 +68,11 @@ curl -s -X POST https://benirene-bali-2026.vercel.app/mcp -H 'Content-Type: appl
 - 有填 `time`（例如 `"19:00"`）就會依時間自動排序，不必再手動調整。
 - 修改用 `update_item`，只傳要改的欄位。
 - 文字用繁體中文，簡短實用，跟現有項目一致；連結寫成 `[文字](https://網址)`。
-- 金額附約略新台幣（1 TWD ≈ 555 IDR）並註明是否含稅服；不確定的價格、營業時間不要捏造，寫「待確認」。
+- 金額附約略新台幣並註明是否含稅服；不確定的價格、營業時間不要捏造，寫「待確認」。
 - 雨備要寫具體替代活動、時段、區域與預訂方式。
 - 照片用 `add_photo`：
   - 網路上的圖片：直接給 `image_url`，伺服器會下載並存一份。
-  - 使用者電腦裡的圖片（你能執行指令時）：先上傳 `curl -s --data-binary @"/路徑/照片.jpg" https://benirene-bali-2026.vercel.app/api/upload`，再把回傳的 `url` 當 `image_url`。單張上限約 4.5MB，太大請先縮小（macOS 可用 `sips -Z 2000 照片.jpg --out 小圖.jpg`）。
+  - 使用者電腦裡的圖片（你能執行指令時）：先上傳 `curl -s --data-binary @"/路徑/照片.jpg" {{SITE}}/api/upload`，再把回傳的 `url` 當 `image_url`。單張上限約 4.5MB，太大請先縮小（macOS 可用 `sips -Z 2000 照片.jpg --out 小圖.jpg`）。
   - 也可以直接給 `image_base64`（約 3MB 以內）。
   - 支援 JPEG、PNG、WebP、GIF；iPhone 的 HEIC 請先轉 JPEG（macOS：`sips -s format jpeg 照片.HEIC --out 照片.jpg`）。
   - 填 `caption`；網路圖片請填 `credit`（作者／授權）與 `source`（來源頁），不要使用沒有授權的圖片。
@@ -118,3 +118,7 @@ curl -s -X POST https://benirene-bali-2026.vercel.app/mcp -H 'Content-Type: appl
 - 還原：`undo_change`
 
 網站：`#prep` 為封面與行前資料（首頁），`#d1`、`#d2`… 為各天，`#<項目 id>` 直達單一項目。
+
+## 使用者想要「一份自己的行程網站」
+
+這個網站可以整份複製到使用者自己的 Vercel 帳號（獨立的網址、資料庫與 MCP，不會改到這裡）。呼叫 `duplicate_site`（不帶參數會回傳要先問的問題），或直接閱讀 {{SITE}}/duplicate 照步驟做。

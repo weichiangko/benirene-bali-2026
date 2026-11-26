@@ -1,13 +1,13 @@
 {
-  "name": "Ben & Irene｜峇里島跨年行程",
-  "short_name": "峇里島行程",
+  "name": "{{LABEL}}",
+  "short_name": "{{SHORT}}",
   "description": "每日路線地圖、景點、餐點與預訂方式，可離線使用。",
   "lang": "zh-Hant",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#e4eadd",
-  "theme_color": "#e4eadd",
+  "background_color": "{{THEME}}",
+  "theme_color": "{{THEME}}",
   "icons": [
     {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
     {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}

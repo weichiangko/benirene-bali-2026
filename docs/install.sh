@@ -1,10 +1,10 @@
 #!/bin/sh
-# Ben & Irene 峇里島行程：把行程的 MCP 伺服器登記到這台電腦上的 AI 工具。
-# 用法：curl -fsSL https://benirene-bali-2026.vercel.app/install.sh | sh
+# {{LABEL}}：把行程的 MCP 伺服器登記到這台電腦上的 AI 工具。
+# 用法：curl -fsSL {{SITE}}/install.sh | sh
 # 只寫入各工具的 MCP 設定，不安裝任何程式、不需要 sudo。DRY_RUN=1 只顯示會做什麼。
 set -u
-NAME="bali-trip"
-URL="https://benirene-bali-2026.vercel.app/mcp"
+NAME="{{NAME}}"
+URL="{{SITE}}/mcp"
 DONE=""
 SKIP=""
 FAIL=""
@@ -40,7 +40,7 @@ let d={};try{const t=fs.readFileSync(f,"utf8");if(t.trim())d=JSON.parse(t)}catch
   fi
 }
 
-say "連接 Ben & Irene 峇里島行程 → $URL"
+say "連接 {{LABEL}} → $URL"
 
 # 先確認伺服器可用
 if has curl; then

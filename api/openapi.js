@@ -1,6 +1,6 @@
 // OpenAPI 3.1 說明檔：在 ChatGPT「建立 GPT → 動作 → 從網址匯入」貼上 /openapi.json 即可。
 const { TOOLS, TITLES } = require('./mcp');
-const SITE = 'https://benirene-bali-2026.vercel.app';
+const { SITE, MCP_NAME } = require('./_lib/env');
 const clip = (s, n) => (s.length > n ? s.slice(0, n - 1) + '…' : s);
 
 module.exports = function handler(req, res) {
@@ -24,7 +24,7 @@ module.exports = function handler(req, res) {
   res.setHeader('Cache-Control', 'no-cache');
   res.status(200).json({
     openapi: '3.1.0',
-    info: { title: 'Ben & Irene 峇里島行程', version: '1.1.0', description: `讀取與編輯 ${SITE} 的旅行行程、封面與網站風格。完整規則見 ${SITE}/ai` },
+    info: { title: `${MCP_NAME} 旅行行程`, version: '1.2.0', description: `讀取與編輯 ${SITE} 的旅行行程、封面與網站風格。完整規則見 ${SITE}/ai` },
     servers: [{ url: SITE }],
     paths,
     components: { schemas: {} },

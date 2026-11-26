@@ -1,4 +1,4 @@
-// 上傳本機圖片：curl -s --data-binary @photo.jpg https://benirene-bali-2026.vercel.app/api/upload
+// 上傳本機圖片：curl -s --data-binary @photo.jpg https://<網站>/api/upload
 // 回傳 {"url": "..."}，再用 MCP 的 add_photo 把 url 加到項目上。Vercel 單次請求上限約 4.5MB。
 const { storeImage, readBody } = require('./_lib/photos');
 module.exports = async function handler(req, res) {

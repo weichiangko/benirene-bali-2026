@@ -1,6 +1,8 @@
 // MCP 伺服器（Streamable HTTP，無狀態）：讓任何支援 MCP 的 AI 讀取與編輯行程。
-// 端點：https://benirene-bali-2026.vercel.app/api/mcp
+// 端點：<網站>/mcp（也可用 /api/mcp）
 const T = require('./_lib/trip');
+const { MCP_NAME } = require('./_lib/env');
+const { duplicateSite } = require('./_lib/duplicate');
 const { syncRoutes } = require('./_lib/route');
 const ST = require('./_lib/settings');
 const THEMES = require('../dist/themes.js');
@@ -97,19 +99,29 @@ const TOOLS = [
   ['fetch', '讀取 search 找到的一筆完整內容：天數 id 如 d3、項目 id，或 trip（封面與主題）。', obj({ id: str('search 結果的 id') }, ['id']), stdFetch, true],
   ['get_history', '列出最近的修改紀錄（含 history_id，可用來還原）。', obj({ limit: { type: 'integer', minimum: 1, maximum: 100 } }), T.getHistory, true],
   ['undo_change', '還原一筆修改紀錄：撤銷新增、還原修改前內容，或救回已刪除的資料。', obj({ history_id: { type: 'integer' } }, ['history_id']), T.undoChange],
+  ['duplicate_site', '使用者想要「複製一份自己的行程網站」時使用：部署一個全新、獨立的網站到使用者自己的 Vercel 帳號（網址、資料庫、MCP 都是他自己的，不會動到這個網站）。不帶參數呼叫會回傳要先問使用者的問題；問完再帶答案呼叫一次，回傳部署步驟（能執行指令的 AI 照步驟全自動完成，使用者只需登入 Vercel）與給聊天介面用的一鍵部署連結。這個工具本身不會修改任何資料。', obj({
+    project_name: str('新網站的專案名稱（英文小寫、數字、-，例如 rome-2027），會成為網址 <名稱>.vercel.app'),
+    title: str('旅程標題，例如「羅馬七日」'), travelers: str('同行的人'), destination: str('目的地（英文），例如「Rome, Italy」'),
+    start_date: str('出發日期 YYYY-MM-DD'), end_date: str('回程日期 YYYY-MM-DD'),
+    start_from: { type: 'string', enum: ['copy', 'blank'], description: 'copy＝複製這個網站目前的行程當範本再修改；blank＝從空白開始' },
+  }), duplicateSite, true],
 ];
-const INSTRUCTIONS = `這是 Ben & Irene 峇里島跨年行程（${T.SITE}）的編輯介面。行程按天排列，每天有多個項目（景點、餐廳、交通等）。
+const tripLabel = t => [t && t.travelers, t && t.title].filter(Boolean).join(' ') || '旅行行程';
+const instructions = label => `這是「${label}」（${T.SITE}）的編輯介面。行程按天排列，每天有多個項目（景點、餐廳、交通等）。
 先用 get_itinerary 了解現況並取得 id，再用 add_place / update_item 等工具修改。新增地點時優先使用 Google 地圖連結。
 網站第一頁是封面＋行前資料：封面與行前說明用 update_trip，待辦用 *_checklist_item，說明區塊用 save_note_section；整站配色、字體、地圖風格用 set_theme。
 規劃新的旅程（例如「幫我規劃羅馬 7 天」）時，網站要跟著目的地變：用 update_trip 換標題、日期、介紹與一張有代表性且有授權的封面照片，再用 set_theme 依目的地文化與封面照片的色調自己設計配色、字體與地圖風格。取代現有行程前先跟使用者確認。
 文字欄位用純文字；連結寫成 [文字](https://網址)。所有修改都會即時同步到網站並留下紀錄，可用 get_history 與 undo_change 還原。
-刪除整天等破壞性操作前，請先向使用者確認。完整規則與「使用者問能做什麼」的回答方式見 ${T.SITE}/ai 。`;
+刪除整天等破壞性操作前，請先向使用者確認。完整規則與「使用者問能做什麼」的回答方式見 ${T.SITE}/ai 。
+使用者想要一份自己的、獨立的行程網站時，用 duplicate_site（部署到使用者自己的 Vercel，不會改到這個網站）。`;
+const INSTRUCTIONS = instructions('旅行行程');
 
 const TITLES = {
   get_itinerary: '查看行程', get_trip: '查看封面與風格', update_trip: '修改封面', set_theme: '設計網站風格', get_item: '查看項目', search_itinerary: '搜尋行程',
   add_place: '新增景點', update_item: '修改項目', move_item: '調整順序', delete_item: '刪除項目', update_day: '修改這天', add_day: '新增一天', delete_day: '刪除一天',
   add_checklist_item: '新增待辦', update_checklist_item: '修改待辦', delete_checklist_item: '刪除待辦', get_note_section: '查看說明區塊', save_note_section: '儲存說明區塊',
   delete_note_section: '刪除說明區塊', add_photo: '新增照片', update_photo: '修改照片', remove_photo: '移除照片', search: '搜尋', fetch: '讀取內容', get_history: '修改紀錄', undo_change: '還原修改',
+  duplicate_site: '複製一份自己的網站',
 };
 const VERSIONS = ['2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05'];
 const ICON = `${T.SITE}/icons/icon-192.png`;
@@ -129,7 +141,11 @@ async function callTool(name, args) {
 async function handle(msg) {
   const { id, method, params = {} } = msg;
   const ok = result => ({ jsonrpc: '2.0', id, result });
-  if (method === 'initialize') return ok({ protocolVersion: VERSIONS.includes(params.protocolVersion) ? params.protocolVersion : VERSIONS[0], capabilities: { tools: { listChanged: false } }, serverInfo: { name: 'bali-trip', title: 'Ben & Irene 峇里島行程', version: '1.1.0', websiteUrl: T.SITE, icons: [{ src: ICON, mimeType: 'image/png', sizes: ['192x192'] }] }, instructions: INSTRUCTIONS });
+  if (method === 'initialize') {
+    let label = '旅行行程';
+    try { label = tripLabel(await ST.tripBrief()); } catch (e) { /* 讀不到封面時用通用名稱 */ }
+    return ok({ protocolVersion: VERSIONS.includes(params.protocolVersion) ? params.protocolVersion : VERSIONS[0], capabilities: { tools: { listChanged: false } }, serverInfo: { name: MCP_NAME, title: label, version: '1.2.0', websiteUrl: T.SITE, icons: [{ src: ICON, mimeType: 'image/png', sizes: ['192x192'] }] }, instructions: instructions(label) });
+  }
   if (method === 'ping') return ok({});
   if (method === 'tools/list') return ok({ tools: toolList() });
   if (method === 'resources/list') return ok({ resources: [] });
@@ -162,7 +178,7 @@ module.exports = async function handler(req, res) {
       for (const k of ['day', 'limit']) if (args[k] !== undefined) args[k] = Number(args[k]);
       try { return res.status(200).json(await t[3](args)); } catch (e) { return res.status(400).json({ error: String(e.message || e) }); }
     }
-    return res.status(200).json({ name: 'bali-trip MCP server', transport: 'streamable-http', endpoint: `${T.SITE}/api/mcp`, docs: `${T.SITE}/llms.txt`, tools: TOOLS.map(t => t[0]) });
+    return res.status(200).json({ name: `${MCP_NAME} MCP server`, transport: 'streamable-http', endpoint: `${T.SITE}/api/mcp`, docs: `${T.SITE}/llms.txt`, tools: TOOLS.map(t => t[0]) });
   }
   if (req.method === 'DELETE') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end();

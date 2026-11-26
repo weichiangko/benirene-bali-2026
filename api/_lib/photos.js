@@ -1,8 +1,7 @@
 // 照片：驗證、下載、上傳到 Supabase Storage（公開讀取的 photos bucket）。
 const crypto = require('crypto');
 
-const URL_ = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+const { SB_URL: URL_, SB_SERVICE: SERVICE, UA } = require('./env');
 const BUCKET = 'photos';
 const MAX = 8 * 1024 * 1024;
 
@@ -38,7 +37,7 @@ async function fetchImage(raw) {
   let u;
   try { u = new URL(String(raw).trim()); } catch { throw new Error('image_url 不是有效網址'); }
   if (!/^https?:$/.test(u.protocol) || PRIVATE.test(u.hostname)) throw new Error('image_url 必須是公開的 http(s) 網址');
-  const r = await fetch(u, { redirect: 'follow', headers: { 'User-Agent': 'bali-trip-site/1.0 (+https://benirene-bali-2026.vercel.app/ai)', Accept: 'image/*' } });
+  const r = await fetch(u, { redirect: 'follow', headers: { 'User-Agent': UA, Accept: 'image/*' } });
   if (!r.ok) throw new Error(`下載圖片失敗 ${r.status}`);
   if (+r.headers.get('content-length') > MAX) throw new Error('圖片太大，上限 8MB');
   const chunks = []; let n = 0;

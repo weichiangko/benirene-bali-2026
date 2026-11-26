@@ -1,1 +1,0 @@
-window.BALI_CONFIG={url:"https://mexctddgtmnkcmtyglry.supabase.co",key:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1leGN0ZGRndG1ua2NtdHlnbHJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ3MzA3NjksImV4cCI6MjExMDMwNjc2OX0.AvX0f9JxnyK51-5RNA4GfBzY4eIOPmkQM_rWJMocTJY"};
