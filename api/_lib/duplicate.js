@@ -43,10 +43,11 @@ async function duplicateSite(a = {}) {
   const commands = [
     `git clone --depth 1 ${TEMPLATE_REPO}.git ${name} && cd ${name} && rm -rf .git .vercel`,
     `${v} whoami || ${v} login`,
-    `${v} link --yes --project ${name}`,
-    `${v} integration add supabase --name ${name}-db`,
-    ...env.map(([k, val]) => `printf %s ${sh(val)} | ${v} env add ${k} production`),
-    `${v} deploy --prod --yes`,
+    `${v} whoami && ${v} teams ls   # 把帳號與團隊列給使用者，等他確認要部署到哪一個（見 guide 第 3b 步），團隊 slug 填進下面的 <團隊>`,
+    `${v} --scope <團隊> link --yes --project ${name}`,
+    `${v} --scope <團隊> integration add supabase --name ${name}-db`,
+    ...env.map(([k, val]) => `printf %s ${sh(val)} | ${v} --scope <團隊> env add ${k} production`),
+    `${v} --scope <團隊> deploy --prod --yes`,
     `curl -fsSL <部署後的網址>/install.sh | sh   # 把新網站的 MCP 接到這台電腦的 AI 工具（必做）`,
     `open <部署後的網址>/   # Linux: xdg-open、Windows: start`,
   ];
@@ -58,7 +59,7 @@ async function duplicateSite(a = {}) {
     // 能在使用者電腦執行指令的 AI（Claude Code、Claude 桌面版的 Code、Codex、Cursor…）
     if_you_can_run_commands: {
       guide: `${SITE}/duplicate`,
-      say: `先完整閱讀 ${SITE}/duplicate，再依序執行下面的指令；每一步看輸出，失敗時照說明處理，不要跳過。`,
+      say: `先完整閱讀 ${SITE}/duplicate，再依序執行下面的指令；每一步看輸出，失敗時照說明處理，不要跳過。登入後一定要把 Vercel CLI 的帳號與團隊列給使用者確認要部署到哪裡；CLI 帳號不對時不要登出，改用 --global-config 另外登入。`,
       commands,
       after_deploy: {
         mcp: `<部署後的網址>/mcp`,
@@ -66,6 +67,7 @@ async function duplicateSite(a = {}) {
           '上面最後兩個指令一定要執行：install.sh 把新網站的 MCP 接到使用者的 AI 工具，open 打開網站；工具還沒出現前用 POST <部署後的網址>/mcp 呼叫',
           `用新網站的 MCP 呼叫 update_trip：${JSON.stringify(trip)}${from === 'blank' ? '，並依目的地換一張有授權的封面照片' : ''}`,
           '用 set_theme 依目的地設計配色、字體與地圖風格',
+          '每一天都要有照片：替每天的代表景點用 add_photo 加有授權的照片（例如 Wikimedia Commons，填 credit 與 source），封面的每日卡片才不會空白；copy 的話把和新目的地無關的範本照片換掉。最後用 get_itinerary 檢查每天都有照片，再用 update_trip 選封面照片',
           from === 'copy' ? '問使用者要保留、修改或刪除哪些從範本複製來的天數與景點' : '問使用者要不要現在就開始排每天的行程',
           `告訴使用者新網址、MCP 接到了哪些 AI 工具；分享給旅伴用這句：閱讀 <部署後的網址>/ai ，幫我連上我們的行程並打開網站`,
         ],

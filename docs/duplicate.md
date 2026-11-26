@@ -43,23 +43,39 @@ npx -y vercel@latest whoami || npx -y vercel@latest login
 
 `whoami` 印出帳號名稱代表已經登入，直接下一步。否則 `login` 會顯示一個網址與代碼並打開瀏覽器：**請使用者在瀏覽器登入 Vercel 並按確認**（沒有帳號可以當場用 GitHub、Google 或 email 免費註冊），你等指令自己結束。不要要求、也不要經手使用者的密碼或 token。
 
+## 3b. 確認要部署到哪個帳號與團隊（一定要問）
+
+這台電腦的 Vercel CLI 可能早就登入了別的帳號（例如公司帳號），和使用者在瀏覽器登入的不一樣；部署錯帳號，之後在瀏覽器同意條款、管理網站時都會找不到（Vercel 會顯示 404）。所以一定要先確認：
+
+```
+npx -y vercel@latest whoami
+npx -y vercel@latest teams ls
+```
+
+把結果整理給使用者，**等他回答**：
+
+1. 「Vercel CLI 目前登入的帳號是 `<whoami 結果>`，要部署到這個帳號嗎？」
+   - 不是：**不要登出原本的帳號**（使用者其他專案可能還在用）。改用獨立的登入資料夾：執行 `npx -y vercel@latest --global-config ~/.vercel-trip login`，請他在瀏覽器（建議無痕視窗）用正確的帳號登入。之後本頁每個 vercel 指令都加上 `--global-config ~/.vercel-trip`，然後重新做這一步確認。
+2. 列出 `teams ls` 的團隊（只有一個就直接確認那一個）：「要部署到哪一個？」把答案的團隊 **slug**（`teams ls` 第一欄）記成 `<團隊>`，之後每個 vercel 指令都加 `--scope <團隊>`。
+3. 提醒使用者：之後若要在瀏覽器按同意（第 5 步），瀏覽器也要登入**同一個** Vercel 帳號；不確定就用無痕視窗開啟。
+
 ## 4. 建立 Vercel 專案
 
 ```
-npx -y vercel@latest link --yes --project <名稱>
+npx -y vercel@latest --scope <團隊> link --yes --project <名稱>
 ```
 
 ## 5. 建立資料庫（Supabase，透過 Vercel Marketplace）
 
 ```
-npx -y vercel@latest integration add supabase --name <名稱>-db
+npx -y vercel@latest --scope <團隊> integration add supabase --name <名稱>-db
 ```
 
 會在使用者的 Vercel 帳號建立一個 Supabase 資料庫（免費方案），並自動把 `SUPABASE_URL`、`SUPABASE_ANON_KEY`、`SUPABASE_SERVICE_ROLE_KEY`、`POSTGRES_URL` 等環境變數加進這個專案。不需要另外註冊 Supabase。
 
 - 跳出選項（方案、區域）時：方案選免費（Free / Hobby），區域選離使用者最近的。
-- 如果說需要先同意條款（terms）：請使用者自己在終端機執行 `npx -y vercel@latest integration accept-terms supabase`，或打開輸出裡的網址在瀏覽器按同意，完成後你再重跑這一步。同意條款要由使用者本人決定，不要替他按。
-- 完成後用 `npx -y vercel@latest env ls` 確認有 `POSTGRES_URL` 與 `SUPABASE_URL`。
+- 如果說需要先同意條款（terms）：請使用者自己在終端機執行 `npx -y vercel@latest --scope <團隊> integration accept-terms supabase`，或打開輸出裡的網址在瀏覽器按同意，完成後你再重跑這一步。同意條款要由使用者本人決定，不要替他按。
+- 完成後用 `npx -y vercel@latest --scope <團隊> env ls` 確認有 `POSTGRES_URL` 與 `SUPABASE_URL`。
 
 ## 6. 設定初始內容並部署
 
@@ -67,19 +83,19 @@ npx -y vercel@latest integration add supabase --name <名稱>-db
 
 - 複製範本（copy）：
   ```
-  printf %s copy | npx -y vercel@latest env add SEED production
-  printf %s {{SITE}} | npx -y vercel@latest env add SEED_FROM production
+  printf %s copy | npx -y vercel@latest --scope <團隊> env add SEED production
+  printf %s {{SITE}} | npx -y vercel@latest --scope <團隊> env add SEED_FROM production
   ```
 - 空白開始（blank）：
   ```
-  printf %s blank | npx -y vercel@latest env add SEED production
+  printf %s blank | npx -y vercel@latest --scope <團隊> env add SEED production
   ```
 
 再設定 MCP 名稱（AI 工具裡顯示的名字）並部署：
 
 ```
-printf %s <名稱> | npx -y vercel@latest env add MCP_NAME production
-npx -y vercel@latest deploy --prod --yes
+printf %s <名稱> | npx -y vercel@latest --scope <團隊> env add MCP_NAME production
+npx -y vercel@latest --scope <團隊> deploy --prod --yes
 ```
 
 部署時會自動建立資料表並放入初始內容（看輸出裡的 `[setup-db]`）。最後一行的 `https://….vercel.app` 就是新網站網址，下面稱為 `<新網址>`。
@@ -106,6 +122,9 @@ curl -fsSL <新網址>/install.sh | sh
 
 1. `update_trip`：填入第 1 步的標題、目的地、日期、同行的人；blank 的話再換一張有授權的封面照片。
 2. `set_theme`：依目的地設計配色、字體與地圖風格（規則見 `<新網址>/ai`）。
+3. 排好每天的行程（blank 或使用者已經給了行程時）：`add_day`／`update_day`、`add_place`（附 Google 地圖連結或地名）。
+4. 照片：**每一天都要有照片**：封面「旅程一覽」的每日卡片會用當天項目的第 1 張照片，沒有照片就是一塊空白。替每天最有代表性的景點用 `add_photo` 加一張有授權的照片（Wikimedia Commons 最方便：`image_url` 用 `https://commons.wikimedia.org/wiki/Special:FilePath/<檔名>?width=1600`，填 `credit`（作者／授權，例如「Wikimedia / CC BY-SA 4.0」）與 `source`（檔案頁網址））；不要用沒有授權的圖片。copy 的話，範本裡和新目的地無關的照片要一起換掉或刪除。最後用 `get_itinerary` 檢查每天至少有一個項目 `photos` 不是空的。
+5. 封面照片：`update_trip` 的 `cover_from_item`（選一張最能代表這趟旅程的）或 `cover_image_url`。
 
 ## 9. 打開網站，交給使用者
 
@@ -118,6 +137,6 @@ curl -fsSL <新網址>/install.sh | sh
 
 - `git clone` 要求登入或 404：範本 repo 不是公開的。告訴使用者這個網站的擁有者還沒開放複製，停止。
 - `vercel` 指令被沙盒擋住網路（例如 Codex）：用你所在環境的權限流程請使用者允許網路存取後重跑。
-- 部署時 `[setup-db]` 出錯：把錯誤訊息完整告訴使用者；修正後重跑 `npx -y vercel@latest deploy --prod --yes`，已完成的步驟會自動略過。
-- 新網站打開是空白或顯示「未連線到資料庫」：通常是第 5 步的環境變數沒加到 Production，用 `npx -y vercel@latest env ls` 檢查後重新部署。
+- 部署時 `[setup-db]` 出錯：把錯誤訊息完整告訴使用者；修正後重跑 `npx -y vercel@latest --scope <團隊> deploy --prod --yes`，已完成的步驟會自動略過。
+- 新網站打開是空白或顯示「未連線到資料庫」：通常是第 5 步的環境變數沒加到 Production，用 `npx -y vercel@latest --scope <團隊> env ls` 檢查後重新部署。
 - 網址名稱被用走：Vercel 會自動給一個帶後綴的網址，以部署輸出為準；想換網址可在 Vercel 專案的 Settings → Domains 修改。

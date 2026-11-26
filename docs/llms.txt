@@ -104,7 +104,7 @@ curl -s -X POST {{SITE}}/mcp -H 'Content-Type: application/json' \
 
 1. 先問清楚日期、同行的人、偏好與預算（若沒說）。行程會取代網站上現有的旅程，動手前確認使用者同意；舊內容可從修改紀錄還原。
 2. 刪除舊的天數（`delete_day`）或用 `update_day` 改寫，再用 `add_day`、`add_place`（附 Google 地圖連結或地名）排好每天，交通方式用 `travel_mode`。
-3. 為重要景點用 `add_photo` 加有授權的照片（填 credit、source）。
+3. 照片：**每一天都要有照片**：封面「旅程一覽」的每日卡片會用當天項目的第 1 張照片，沒有照片就是一塊空白。替每天最有代表性的景點用 `add_photo` 加一張有授權的照片（Wikimedia Commons 最方便：`image_url` 用 `https://commons.wikimedia.org/wiki/Special:FilePath/<檔名>?width=1600`，填 `credit`（作者／授權，例如「Wikimedia / CC BY-SA 4.0」）與 `source`（檔案頁網址））；不要用沒有授權的圖片。copy 的話，範本裡和新目的地無關的照片要一起換掉或刪除。最後用 `get_itinerary` 檢查每天至少有一個項目 `photos` 不是空的。
 4. `update_trip` 改封面：標題、日期、介紹，選一張最能代表這趟旅程的照片當封面。
 5. `set_theme` 依上面的方法設計這個目的地的風格。
 6. 用 `add_checklist_item`、`save_note_section` 補上簽證、交通卡、預訂等行前準備。

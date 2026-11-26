@@ -1050,7 +1050,11 @@ html.phone .hero h1{font-size:clamp(46px,14vw,68px)}
 .cbtn.pri:hover{color:var(--ink);transform:translateY(-2px)}
 .cbtn.ghost{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.42);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
 .cbtn.ghost:hover{background:rgba(255,255,255,.24)}
-html.phone .cbtn{flex:1;padding:0 16px}
+.cbtn{white-space:nowrap}
+/* 手機：主按鈕獨佔一行，兩個次要按鈕並排各半，文字不換行 */
+html.phone .hero-cta{gap:8px}
+html.phone .cbtn{flex:1 1 0;min-width:0;height:48px;padding:0 12px;font-size:14px}
+html.phone .cbtn.pri{flex-basis:100%}
 .hero-side{display:flex;flex-direction:column;align-items:flex-end;gap:14px;flex-shrink:0;text-align:right}
 html.touch .hero-side{flex-direction:row;align-items:flex-end;justify-content:space-between;padding-top:18px;border-top:1px solid rgba(255,255,255,.32);text-align:left}
 .who{font-family:var(--serif);font-size:22px;font-style:italic;opacity:.96}
