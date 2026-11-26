@@ -9,7 +9,7 @@ https://benirene-bali-2026.vercel.app
 - `dist/`：靜態網站。`app.js` 主程式、`themes.js` 主題（配色、字體、地圖底圖與色調）、`sw.js` 離線快取、`seed.json` 範本行程。
 - `docs/`：依部署環境產生的文字範本（`{{SITE}}` 等變數換成這個網站的網址與旅程名稱），由 `api/site.js` 提供：`/ai`（`llms.txt`，給 AI 的說明）、`/install.sh`、`/duplicate`（複製網站的步驟）、`/manifest.webmanifest`；`/config.js` 也由它依環境變數產生。
 - `api/`：Vercel 函式。
-  - `mcp.js`：MCP 伺服器（`/mcp`，Streamable HTTP，免登入），Claude 聊天、ChatGPT、Claude Code、Codex 等都能接。包含 `duplicate_site` 工具。
+  - `mcp.js`：MCP 伺服器（`/mcp`，Streamable HTTP，免登入），Claude 聊天、ChatGPT、Grok Bot、Claude Code、Codex 等都能接。包含 `duplicate_site` 工具。
   - `tools.js`、`openapi.js`：同一組工具的 REST 版（`/api/tools/<名稱>`、`/openapi.json`），給 ChatGPT 自訂 GPT 的動作使用。
   - `upload.js`、`resolve.js`、`route.js`：照片上傳、Google 地圖連結解析、路線計算。
   - `export.js`：整份行程的原始資料（`/api/export`），複製網站時當初始內容。
@@ -45,7 +45,7 @@ npx -y vercel@latest --prod --yes
 
 任何人都可以把這個網站整份複製到自己的 Vercel 帳號（自己的網址、資料庫與 MCP）：
 
-- 能執行指令的 AI（Claude Code、Claude 桌面版的 Code 分頁、Codex…）：貼上「閱讀 https://<網站>/duplicate ，幫我複製一份自己的行程網站」。AI 會問幾個問題，然後全自動部署，使用者只需要登入 Vercel。
+- 能執行指令的 AI（Grok Bot、Claude Code、Claude 桌面版的 Code 分頁、Codex…）：貼上「閱讀 https://<網站>/duplicate ，幫我複製一份自己的行程網站」。AI 會問幾個問題，然後全自動部署，使用者只需要登入 Vercel。
 - 已連上 MCP 的 AI：說「我想要一份自己的行程網站」，AI 會用 `duplicate_site`。
 - 只能聊天的 AI：`duplicate_site` 會給一個 Vercel 一鍵部署連結。
 

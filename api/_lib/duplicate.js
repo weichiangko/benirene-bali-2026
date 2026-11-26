@@ -56,7 +56,7 @@ async function duplicateSite(a = {}) {
     project_name: name,
     expected_url: `https://${name}.vercel.app`,
     start_from: from,
-    // 能在使用者電腦執行指令的 AI（Claude Code、Claude 桌面版的 Code、Codex、Cursor…）
+    // 能執行指令的 AI（Grok Bot、Claude Code、Claude 桌面版的 Code、Codex、Cursor…）；在自己雲端電腦上的（Grok Bot）把網址傳給使用者，不用 open
     if_you_can_run_commands: {
       guide: `${SITE}/duplicate`,
       say: `先完整閱讀 ${SITE}/duplicate，再依序執行下面的指令；每一步看輸出，失敗時照說明處理，不要跳過。登入後一定要把 Vercel CLI 的帳號與團隊列給使用者確認要部署到哪裡；CLI 帳號不對時不要登出，改用 --global-config 另外登入。`,

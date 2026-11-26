@@ -1298,8 +1298,14 @@ details.more summary small{font-weight:400;color:var(--muted);font-size:12px}
 .aibox .chip{cursor:pointer}
 .aibox .aisub{font-size:12px}
 .dupbox{margin-top:12px}
+.aiics{display:inline-flex;align-items:center;gap:3px;margin-right:6px;vertical-align:-3px}
+.aiic{width:16px;height:16px;flex:none}
+.duprows{list-style:none;margin:4px 0 0;padding:0;display:flex;flex-direction:column;gap:10px;width:100%}
+.duprows li{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.6;color:var(--muted)}
+.duprows li .aiics{margin:3px 0 0;flex:none}
+.duprows b{display:block;color:var(--ink);font-weight:600}
 .aitabs{display:flex;flex-wrap:wrap;gap:6px}
-.aitab{font:inherit;font-size:13px;height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
+.aitab{font:inherit;font-size:13px;height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .aitab[aria-selected=true]{background:var(--green);border-color:var(--green);color:var(--paper)}
 .aisteps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:13.5px;line-height:1.6}
 .aisteps a{color:var(--green)}

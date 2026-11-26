@@ -7,7 +7,7 @@
 
 ## 0. 你能不能執行指令？
 
-- **能**（Claude Code、Claude 桌面版的 Code 分頁、Codex、Cursor、Gemini CLI…）：照下面 1–7 步全自動完成。
+- **能**（Grok Bot、Claude Code、Claude 桌面版的 Code 分頁、Codex、Cursor、Gemini CLI…）：照下面每一步全自動完成。如果你是在**自己的雲端電腦**上執行指令（例如 Grok Bot），不是使用者的電腦：`install.sh` 只會把 MCP 接到你自己身上；「打開網站」改成把網址傳給使用者請他點開。
 - **不能**（Claude 聊天、ChatGPT）：呼叫 `duplicate_site` 取得 `deploy_button` 連結給使用者，或請他把這段話貼到能執行指令的 AI（例如 Claude 桌面版的 Code 分頁）：「閱讀 {{SITE}}/duplicate ，幫我複製一份自己的行程網站」。
 
 需要：Node.js 20 以上（`node -v`）、git。沒有的話請使用者先安裝（macOS：`brew install node git`，或到 https://nodejs.org 下載）。

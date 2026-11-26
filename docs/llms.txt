@@ -10,7 +10,9 @@ MCP 伺服器：`{{SITE}}/mcp`（Streamable HTTP，名稱 `{{NAME}}`）
 
 ## 2. 連上（擇一，依你的環境）
 
-### A. 你能在使用者電腦上執行指令（Claude Code、Codex、Cursor、Gemini CLI、VS Code 等）
+### A. 你能執行指令（Grok Bot、Claude Code、Codex、Cursor、Gemini CLI、VS Code 等）
+
+如果你是在**自己的雲端電腦**上執行指令（例如 Grok Bot），不是使用者的電腦：`install.sh` 只會把 MCP 接到你自己身上；「打開網站」改成把網址傳給使用者請他點開。
 
 在 macOS 或 Linux 的終端機執行：
 
