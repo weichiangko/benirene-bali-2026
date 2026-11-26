@@ -28,7 +28,7 @@ async function duplicateSite(a = {}) {
   if (missing.length) {
     return {
       next: 'ask_user',
-      say: '先跟使用者確認下面幾件事（一次問完，選填的可以跳過），再帶著答案呼叫一次 duplicate_site。',
+      say: '先跟使用者確認下面幾件事（一次問完），等他回答後再帶著答案呼叫一次 duplicate_site。不要自己編答案或用範例值；選填的題目使用者說跳過才跳過。',
       questions: QUESTIONS.map(q => ({ ...q, answered: !!String(a[q.key] || '').trim() })),
       what_happens: '會在使用者自己的 Vercel 帳號建立一個新網站和一個新的 Supabase 資料庫（Vercel Marketplace，免費方案即可），這個網站不會被修改。使用者只需要在瀏覽器登入 Vercel。',
     };
@@ -47,6 +47,8 @@ async function duplicateSite(a = {}) {
     `${v} integration add supabase --name ${name}-db`,
     ...env.map(([k, val]) => `printf %s ${sh(val)} | ${v} env add ${k} production`),
     `${v} deploy --prod --yes`,
+    `curl -fsSL <部署後的網址>/install.sh | sh   # 把新網站的 MCP 接到這台電腦的 AI 工具（必做）`,
+    `open <部署後的網址>/   # Linux: xdg-open、Windows: start`,
   ];
   return {
     next: 'deploy',
@@ -61,10 +63,11 @@ async function duplicateSite(a = {}) {
       after_deploy: {
         mcp: `<部署後的網址>/mcp`,
         then: [
+          '上面最後兩個指令一定要執行：install.sh 把新網站的 MCP 接到使用者的 AI 工具，open 打開網站；工具還沒出現前用 POST <部署後的網址>/mcp 呼叫',
           `用新網站的 MCP 呼叫 update_trip：${JSON.stringify(trip)}${from === 'blank' ? '，並依目的地換一張有授權的封面照片' : ''}`,
           '用 set_theme 依目的地設計配色、字體與地圖風格',
           from === 'copy' ? '問使用者要保留、修改或刪除哪些從範本複製來的天數與景點' : '問使用者要不要現在就開始排每天的行程',
-          `請使用者打開新網址；要讓其他 AI 也能編輯，執行 curl -fsSL <新網址>/install.sh | sh`,
+          `告訴使用者新網址、MCP 接到了哪些 AI 工具；分享給旅伴用這句：閱讀 <部署後的網址>/ai ，幫我連上我們的行程並打開網站`,
         ],
       },
     },

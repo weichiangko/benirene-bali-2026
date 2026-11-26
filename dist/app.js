@@ -109,7 +109,8 @@ const foot=d=>`<p class="foot">時段為預排，尚未代訂 · ${d?'<a href="#
 const N=()=>data.days.length;
 const SHORT=()=>plain((data.trip||{}).title)||'旅行行程';
 const LABEL=()=>[plain((data.trip||{}).travelers),SHORT()].filter(Boolean).join(' 的');
-const AI_PROMPT=()=>`閱讀 ${ORIGIN}/ai ，幫我連上「${LABEL()}」`;
+// 一句話：AI 讀完 /ai 會把行程的 MCP 接到自己身上，再打開網站。分享給旅伴也是這一句
+const AI_PROMPT=()=>`閱讀 ${ORIGIN}/ai ，幫我連上「${LABEL()}」並打開網站`;
 const DUP_PROMPT=()=>`閱讀 ${ORIGIN}/duplicate ，幫我複製一份自己的行程網站`;
 const MCP_URL=ORIGIN+'/mcp';
 const aiBox=()=>`<section class="aibox"><h2>用 AI 編輯行程</h2><p>接上之後，直接用聊天告訴 AI 想改什麼，或問它「我能改什麼」。改完網站立刻更新，所有修改都能在修改紀錄還原。</p>
@@ -118,6 +119,10 @@ ${S.aiTab==='claude'?`<ol class="aisteps"><li>在 <a href="https://claude.ai/set
 :S.aiTab==='chatgpt'?`<ol class="aisteps"><li>ChatGPT 網頁版 → 設定 → 應用程式（Apps）→ 進階設定，開啟「開發者模式」</li><li>按「建立應用程式」：名稱「${esc(SHORT())}」，MCP 伺服器網址貼上下面這行，驗證選「無」，勾選信任後建立</li><li>新對話的「＋」→ 更多 → 選「${esc(SHORT())}」，就可以開始聊</li></ol><pre>${MCP_URL}</pre><button type="button" class="chip pri" data-copy="${MCP_URL}">複製網址</button><p class="aisub">開發者模式需要付費方案。免費帳號：建立一個自訂 GPT，在「動作」用「從網址匯入」貼上 ${ORIGIN}/openapi.json ，驗證選「無」，隱私權政策填 ${ORIGIN}/privacy.html 。</p>`
 :`<p>把這句貼給 Claude Code、Codex、Cursor、Gemini CLI 等能執行指令的 AI，它會自己完成連線：</p><pre id="aiPrompt">${esc(AI_PROMPT())}</pre><button type="button" class="chip pri" data-copyai>複製這句</button><p class="aisub">想要一份自己的行程網站（自己的網址與資料庫，部署到你的 Vercel 帳號）？把這句貼給同一個 AI：</p><pre>${esc(DUP_PROMPT())}</pre><button type="button" class="chip" data-copy="${esc(DUP_PROMPT())}">複製這句</button>`}</section>`;
 async function copyText(v,msg){try{await navigator.clipboard.writeText(v)}catch(e){const t=document.createElement('textarea');t.value=v;document.body.appendChild(t);t.select();try{document.execCommand('copy')}catch(_){}t.remove()}toast(msg)}
+// 分享：手機用系統分享，其他複製到剪貼簿。朋友把這句貼給自己的 AI，就會接好 MCP 並打開網站
+async function shareSite(){const text=AI_PROMPT();
+ if(navigator.share&&matchMedia('(pointer:coarse)').matches){try{await navigator.share({title:LABEL(),text});return}catch(e){if(e&&e.name==='AbortError')return}}
+ copyText(text,'已複製：傳給旅伴，請他貼給自己的 AI（Claude、ChatGPT、Codex…）')}
 async function copyAI(){try{await navigator.clipboard.writeText(AI_PROMPT())}catch(e){const t=document.createElement('textarea');t.value=AI_PROMPT();document.body.appendChild(t);t.select();try{document.execCommand('copy')}catch(_){}t.remove()}toast('已複製，貼給 AI 即可')}
 
 
@@ -175,7 +180,7 @@ function panelCover(){const t=data.trip||DEFAULT_TRIP,C=data.checks,done=C.filte
 <section class="hero${img?'':' noimg'}${S.heroAnim?' anim':''}">${img}<div class="hero-shade"></div>
  <div class="hero-in cv-in">
   <div class="hero-txt"><span class="hero-eb">${esc(t.destination)}${range?`<i></i>${range}`:''}</span><h1>${esc(t.title)}</h1>${t.subtitle?`<p class="hero-sub">${esc(t.subtitle)}</p>`:''}
-   <div class="hero-cta"><a class="cbtn pri" href="#d1">${ph&&ph.k==='during'?'看今天的行程':'從第一天開始'} <span aria-hidden="true">→</span></a><button type="button" class="cbtn ghost" data-scrollto="prepList">行前準備 ${done}/${C.length}</button></div></div>
+   <div class="hero-cta"><a class="cbtn pri" href="#d1">${ph&&ph.k==='during'?'看今天的行程':'從第一天開始'} <span aria-hidden="true">→</span></a><button type="button" class="cbtn ghost" data-scrollto="prepList">行前準備 ${done}/${C.length}</button><button type="button" class="cbtn ghost" data-share>分享給旅伴</button></div></div>
   <div class="hero-side">${t.travelers?`<span class="who">${esc(t.travelers)}</span>`:''}${cd}</div>
  </div>${t.cover_caption&&img?`<span class="hero-cap">${esc(t.cover_caption)}</span>`:''}${ebar}
 </section>
@@ -478,11 +483,12 @@ document.addEventListener('toggle',e=>{if(e.target.id==='hist'&&e.target.open)lo
 
 /* ---------- events ---------- */
 document.addEventListener('click',e=>{
- const t=e.target.closest('[data-pick],[data-step],[data-photo],[data-showmap],[data-rain],[data-all],[data-go],[data-edit],[data-move],[data-del],[data-add],[data-editday],[data-editcheck],[data-delcheck],[data-addcheck],[data-editnote],[data-delnote],[data-addnote],[data-addday],[data-restore],[data-copyai],[data-copy],[data-aitab],[data-ptab],[data-edittrip],[data-scrollto]');
+ const t=e.target.closest('[data-pick],[data-step],[data-photo],[data-showmap],[data-rain],[data-all],[data-go],[data-edit],[data-move],[data-del],[data-add],[data-editday],[data-editcheck],[data-delcheck],[data-addcheck],[data-editnote],[data-delnote],[data-addnote],[data-addday],[data-restore],[data-copyai],[data-share],[data-copy],[data-aitab],[data-ptab],[data-edittrip],[data-scrollto]');
  if(!e.target.closest('.search,.msearch,#msBtn'))$$('.results').forEach(r=>r.classList.remove('show'));
  if(!e.target.closest('.dpick'))setDayMenu(false);else if(e.target.closest('#dmenu a'))setDayMenu(false);
  if(!t)return;const ds=t.dataset;
  if(ds.copyai!==undefined){copyAI();return}
+ if(ds.share!==undefined){shareSite();return}
  if(ds.copy){copyText(ds.copy,'已複製網址');return}
  if(ds.aitab){S.aiTab=ds.aitab;renderPanel();return}
  if(ds.ptab){S.ptab=ds.ptab;lsSet('bali-ptab',ds.ptab);renderPanel();const b=document.getElementById('pt-'+ds.ptab);if(b)b.focus({preventScroll:true});return}
