@@ -35,6 +35,7 @@ function brief(t) {
     cover_image: t.cover_image && !/^https?:/.test(t.cover_image) ? `${SITE}/${t.cover_image}` : t.cover_image,
     cover_caption: t.cover_caption, cover_focus: t.cover_focus, prep_title: t.prep_title, prep_intro: t.prep_intro,
     notes_tab: { enabled: t.notes_enabled !== false, title: t.notes_title || '入境與須知' },
+    icon: { mode: t.icon_image ? 'image' : 'auto', image: t.icon_image || '', preview: `${SITE}/icon-512.png` },
     theme: { name: theme.name, based_on: theme.preset, saved: t.theme || {}, resolved: theme },
     link: `${SITE}/#prep`,
   };
@@ -106,4 +107,24 @@ async function setTheme(args) {
   return { theme: { name: res.name, based_on: res.preset, saved: r[0].theme, resolved: res }, ...(warnings.length ? { contrast_warnings: warnings, hint: '有文字不易閱讀，請調整對應顏色後再呼叫一次 set_theme' } : { contrast: '文字對比都足夠' }), note: '所有開著網站的人會立刻看到新主題', link: `${SITE}/#prep` };
 }
 
-module.exports = { getTrip, updateTrip, setTheme, tripBrief: async () => brief(await row()) };
+// 網站圖示（favicon、手機主畫面、MCP）：上傳一張圖片，或 reset 回到依主題自動產生
+async function setIcon(args) {
+  await row();
+  let url;
+  if (args.reset) url = '';
+  else if (args.from_item) url = (await itemPhoto(args.from_item, args.photo_index)).image;
+  else if (args.image_base64) url = (await storeImage(decodeBase64(args.image_base64))).url;
+  else if (args.image_url) {
+    const u = String(args.image_url).trim();
+    url = u.startsWith(`${URL_}/storage/v1/object/public/photos/`) ? u : (await storeImage(await fetchImage(u))).url;
+  } else throw new Error('請提供 image_url、image_base64、from_item 其中之一，或 reset: true 回到自動圖示');
+  if (url && !/^https?:/.test(url)) url = `${SITE}/${url}`; // 範本內建的 img/ 照片
+  await rest('trip?id=eq.main', { method: 'PATCH', body: { icon_image: url } });
+  return {
+    icon: url ? 'image' : 'auto（依主題配色自動產生，換主題會跟著變）', image: url,
+    preview: { png_512: `${SITE}/icon-512.png`, png_192: `${SITE}/icon-192.png`, svg: `${SITE}/icon.svg` },
+    note: '圖片會置中裁成正方形，小尺寸也要看得清楚（主體大、背景單純）。瀏覽器分頁幾分鐘內更新；已加到手機主畫面的圖示由系統快取，可能要重新加入才會換。',
+  };
+}
+
+module.exports = { getTrip, updateTrip, setTheme, setIcon, tripBrief: async () => brief(await row()) };

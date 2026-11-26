@@ -124,7 +124,8 @@ async function seed() {
     if (mode === 'blank') {
       await db.query(`update trip set title='我的旅程', subtitle='', travelers='', destination='', start_date=null, end_date=null, intro='', cover_image='', cover_caption='', prep_intro='', theme='{}' where id='main'`);
     } else if (trip.length) {
-      await insertRows('trip', trip.map(t => ({ ...t, id: 'main' })));
+      // 圖示不沿用來源網站的，新網站預設依自己的主題自動產生
+      await insertRows('trip', trip.map(t => ({ ...t, id: 'main', icon_image: '' })));
     }
     await db.query(`select setval(pg_get_serial_sequence('days','id'), greatest((select coalesce(max(id),0) from days),1))`);
     await db.query('delete from history'); // 初始內容不算修改紀錄

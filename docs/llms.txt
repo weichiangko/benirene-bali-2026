@@ -101,6 +101,7 @@ curl -s -X POST {{SITE}}/mcp -H 'Content-Type: application/json' \
   3. 地圖也要跟著主題：`map_style` 選起點（natural、muted、mono、warm、cool、vintage、pastel、duotone、ink、night、terrain、satellite、ocean），再用 `map` 細調 `base`（street、topo、light_gray、dark_gray、satellite、ocean）、`saturation`、`brightness`、`contrast`、`hue_rotate`、`sepia`、`grayscale`、`tint`（#RRGGBB 或 accent 等主題色名）＋`tint_strength`、`label_opacity`。路線用 accent 色，底圖別搶走路線的顏色。地圖色調和主題是同一套：`tint` 請用主題顏色名稱（例如 `primary`、`accent`），改配色時地圖會自動跟著變；底圖要淡、低飽和，讓路線和標記跳出來。
   4. 回傳 `contrast_warnings` 時調整顏色再呼叫一次，直到沒有警告。
   - 例：羅馬 → 標題 Cinzel 或 Cormorant Garamond（serif）、主色深赭紅、強調色金黃、背景大理石米白、地圖 warm；英國 → Playfair Display、墨黑主色、郵筒紅強調、白底、地圖 mono。
+- 網站圖示（瀏覽器分頁 favicon、加到手機主畫面的 App 圖示）：預設依主題配色自動產生，`set_theme` 之後會自動跟著變，不用另外處理。使用者想要專屬圖示時用 `set_icon`（`image_url`、`image_base64` 或 `from_item`），選主體大、背景單純、縮到 32px 也認得出來的圖（地標剪影、插畫、標誌），風景照通常太細；`reset: true` 回到自動圖示。
 
 ### 使用者說「幫我規劃去 X 的 N 天行程」
 
@@ -115,7 +116,7 @@ curl -s -X POST {{SITE}}/mcp -H 'Content-Type: application/json' \
 ## 工具一覽
 
 - 讀取：`get_itinerary`、`get_item`、`search_itinerary`、`get_note_section`、`get_trip`、`get_history`、`search`／`fetch`（ChatGPT 標準格式）
-- 封面與風格：`update_trip`、`set_theme`
+- 封面與風格：`update_trip`、`set_theme`、`set_icon`
 - 行程項目：`add_place`、`update_item`、`move_item`、`delete_item`
 - 照片：`add_photo`、`update_photo`、`remove_photo`（本機檔案先 POST 到 `/api/upload`）
 - 日程：`update_day`、`add_day`、`delete_day`

@@ -77,6 +77,11 @@ const TOOLS = [
     } },
     reset: { type: 'boolean', description: 'true 表示清除所有自訂，只保留 preset' },
   }), ST.setTheme],
+  ['set_icon', '設定網站圖示（瀏覽器分頁 favicon、加到手機主畫面的 App 圖示、MCP 圖示）。預設依主題配色自動產生（主色底＋地圖標記），換主題會自動跟著變；想用專屬圖示時給一張圖片：image_url（網路圖片）、image_base64、或 from_item（行程中某項目的照片）。圖片會置中裁成正方形，請選主體大、背景單純、縮到 32px 也認得出來的圖（地標剪影、插畫、標誌），風景照通常太細。reset: true 回到自動圖示。', obj({
+    image_url: str('圖示圖片網址（JPEG、PNG、WebP、GIF；建議至少 512×512）'), image_base64: str('圖示圖片的 base64'),
+    from_item: str('用這個項目 id 的照片'), photo_index: { type: 'integer', minimum: 1, description: '搭配 from_item：第幾張，預設 1' },
+    reset: { type: 'boolean', description: 'true 表示回到依主題自動產生的圖示' },
+  }), ST.setIcon],
   ['get_item', '讀取單一項目的完整內容。', obj({ item_id: str('項目 id') }, ['item_id']), T.getItem, true],
   ['search_itinerary', '用關鍵字搜尋所有項目（名稱、說明、餐點、預訂、雨備）。', obj({ query: str('關鍵字') }, ['query']), T.search, true],
   ['add_place', '在某一天新增景點／餐廳／行程。提供 google_maps_url 會自動帶入名稱與位置；title 可省略。', obj({ day: dayN, title: str('名稱；有 google_maps_url 時可省略'), ...LOC_PROPS, ...ITEM_PROPS }, ['day']), T.addPlace],
@@ -109,7 +114,7 @@ const TOOLS = [
 const tripLabel = t => [t && t.travelers, t && t.title].filter(Boolean).join(' ') || '旅行行程';
 const instructions = label => `這是「${label}」（${T.SITE}）的編輯介面。行程按天排列，每天有多個項目（景點、餐廳、交通等）。
 先用 get_itinerary 了解現況並取得 id，再用 add_place / update_item 等工具修改。新增地點時優先使用 Google 地圖連結。
-網站第一頁是封面＋行前資料：封面與行前說明用 update_trip，待辦用 *_checklist_item，說明區塊用 save_note_section；整站配色、字體、地圖風格用 set_theme。
+網站第一頁是封面＋行前資料：封面與行前說明用 update_trip，待辦用 *_checklist_item，說明區塊用 save_note_section；整站配色、字體、地圖風格用 set_theme；網站圖示（favicon、手機主畫面）預設跟著主題自動產生，要專屬圖示用 set_icon。
 規劃新的旅程（例如「幫我規劃羅馬 7 天」）時，網站要跟著目的地變：用 update_trip 換標題、日期、介紹與一張有代表性且有授權的封面照片，再用 set_theme 依目的地文化與封面照片的色調自己設計配色、字體與地圖風格。取代現有行程前先跟使用者確認。
 文字欄位用純文字；連結寫成 [文字](https://網址)。所有修改都會即時同步到網站並留下紀錄，可用 get_history 與 undo_change 還原。
 刪除整天等破壞性操作前，請先向使用者確認。完整規則與「使用者問能做什麼」的回答方式見 ${T.SITE}/ai 。
@@ -117,14 +122,14 @@ const instructions = label => `這是「${label}」（${T.SITE}）的編輯介�
 const INSTRUCTIONS = instructions('旅行行程');
 
 const TITLES = {
-  get_itinerary: '查看行程', get_trip: '查看封面與風格', update_trip: '修改封面', set_theme: '設計網站風格', get_item: '查看項目', search_itinerary: '搜尋行程',
+  get_itinerary: '查看行程', get_trip: '查看封面與風格', update_trip: '修改封面', set_theme: '設計網站風格', set_icon: '設定網站圖示', get_item: '查看項目', search_itinerary: '搜尋行程',
   add_place: '新增景點', update_item: '修改項目', move_item: '調整順序', delete_item: '刪除項目', update_day: '修改這天', add_day: '新增一天', delete_day: '刪除一天',
   add_checklist_item: '新增待辦', update_checklist_item: '修改待辦', delete_checklist_item: '刪除待辦', get_note_section: '查看說明區塊', save_note_section: '儲存說明區塊',
   delete_note_section: '刪除說明區塊', add_photo: '新增照片', update_photo: '修改照片', remove_photo: '移除照片', search: '搜尋', fetch: '讀取內容', get_history: '修改紀錄', undo_change: '還原修改',
   duplicate_site: '複製一份自己的網站',
 };
 const VERSIONS = ['2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05'];
-const ICON = `${T.SITE}/icons/icon-192.png`;
+const ICON = `${T.SITE}/icon-192.png`;
 const toolList = () => TOOLS.map(([name, description, inputSchema, , ro]) => ({
   name, title: TITLES[name] || name, description, inputSchema,
   annotations: { title: TITLES[name] || name, readOnlyHint: !!ro, destructiveHint: /^(delete_|remove_)/.test(name), idempotentHint: !!ro, openWorldHint: false },

@@ -1,10 +1,10 @@
-const VERSION = 'v33';
+const VERSION = 'v34';
 const SHELL = `shell-${VERSION}`;
 const TILES = 'tiles-v1'; // 圖磚快取跨版本保留
 const PHOTOS = 'photos-v1';
 const FONTS = 'fonts-v1'; // 主題的 Google Fonts，離線也能顯示
 const TILE_HOST = 'server.arcgisonline.com';
-const CORE = ['./', './index.html', './app.js', './config.js', './themes.js', './vendor/supabase.js', './seed.json', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './img/0412e7fc22f86ffd.webp', './img/0885af984e126684.webp', './img/1efa56162060cad3.webp', './img/393f869237631466.webp', './img/44d2650b82a60bbe.webp', './img/4bb12cb1589e17e4.webp', './img/5f84d6ba4e9f6605.webp', './img/686f2aa5355b04be.webp', './img/6ef9eade48d4f874.webp', './img/7f7bc1fb38c871d6.webp', './img/87c7e2e1df829e99.webp', './img/8df82cfc2f871ac7.webp', './img/931ee2b3bbff4c81.webp', './img/94366815ae137b6f.webp', './img/a543c7c30989ae21.webp', './img/af3bf6480178fd4c.webp', './img/b63b6db99a7578bd.webp', './img/b8a34eb832d5f4db.webp', './img/bbeea4839c9b4453.webp', './img/c9a5fa1b70c15209.webp', './img/d4c63de28272f001.webp', './img/ff9e41302199bdcb.webp'];
+const CORE = ['./', './index.html', './app.js', './config.js', './themes.js', './vendor/supabase.js', './seed.json', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './img/0412e7fc22f86ffd.webp', './img/0885af984e126684.webp', './img/1efa56162060cad3.webp', './img/393f869237631466.webp', './img/44d2650b82a60bbe.webp', './img/4bb12cb1589e17e4.webp', './img/5f84d6ba4e9f6605.webp', './img/686f2aa5355b04be.webp', './img/6ef9eade48d4f874.webp', './img/7f7bc1fb38c871d6.webp', './img/87c7e2e1df829e99.webp', './img/8df82cfc2f871ac7.webp', './img/931ee2b3bbff4c81.webp', './img/94366815ae137b6f.webp', './img/a543c7c30989ae21.webp', './img/af3bf6480178fd4c.webp', './img/b63b6db99a7578bd.webp', './img/b8a34eb832d5f4db.webp', './img/bbeea4839c9b4453.webp', './img/c9a5fa1b70c15209.webp', './img/d4c63de28272f001.webp', './img/ff9e41302199bdcb.webp'];
 const BLANK = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='), c => c.charCodeAt(0));
 
 self.addEventListener('install', e => {

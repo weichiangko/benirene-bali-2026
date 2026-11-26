@@ -135,6 +135,7 @@ curl -fsSL <新網址>/install.sh | sh
    - **blank**：不用排，第 4、5 步也可以跳過。
 4. 照片（copy、import、plan）：**每一天都要有照片**：封面「旅程一覽」的每日卡片會用當天項目的第 1 張照片，沒有照片就是一塊空白。替每天最有代表性的景點用 `add_photo` 加一張有授權的照片（Wikimedia Commons 最方便：`image_url` 用 `https://commons.wikimedia.org/wiki/Special:FilePath/<檔名>?width=1600`，填 `credit`（作者／授權，例如「Wikimedia / CC BY-SA 4.0」）與 `source`（檔案頁網址））；不要用沒有授權的圖片。copy 的話，範本裡和新目的地無關的照片要一起換掉或刪除。最後用 `get_itinerary` 檢查每天至少有一個項目 `photos` 不是空的。
 5. 封面照片：`update_trip` 的 `cover_from_item`（選一張最能代表這趟旅程的）或 `cover_image_url`。
+6. 網站圖示：預設依新主題自動產生，不用處理。使用者想要專屬圖示時才用 `set_icon`。
 
 ## 9. 打開網站，交給使用者
 
