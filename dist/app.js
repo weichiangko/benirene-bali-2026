@@ -105,7 +105,7 @@ function curFloat(d){if(!d||!d.pins.length)return'';const i=curIdx(d),x=d.pins[i
 function curSheet(d){if(!d||!d.pins.length)return'';const i=curIdx(d),x=d.pins[i];return `<div class="sc"><span class="badge">${x.n}</span><span class="sct"><span class="eb">${esc(x.range)} · ${esc(x.type)}</span><span class="ct">${esc(x.ttl)}</span></span><div class="scnav"><button class="mbtn" data-step="-1" aria-label="上一站">${ICON.l}</button><span class="cnt">第 ${i+1} / ${d.pins.length} 站</span><button class="mbtn" data-step="1" aria-label="下一站">${ICON.r}</button><a class="go" href="${x.dir}" target="_blank" rel="noopener noreferrer">導航 ↗</a></div></div>`}
 const grab=(title,meta)=>`<div class="grab" id="grab"><button class="handle" id="handle" aria-label="${S.snap==='full'?'收合行程清單':'展開行程清單'}"><span></span></button><div class="sheethead"><h1>${esc(title)}</h1>${meta?`<span class="meta">${esc(meta)}</span>`:''}</div></div>`;
 const fmtTime=s=>{if(!s)return'';const d=new Date(s);return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`};
-const foot=d=>`<p class="foot">時段為預排，尚未代訂 · ${d?'<a href="#prep">行前預訂清單 ↗</a>':'<a href="#d1">回到 DAY 01 ↗</a>'}<br>${d&&d.mapNote?esc(d.mapNote)+' · ':''}最後更新：${fmtTime(data.updated)||'—'} · 照片依各圖來源標註<br><span class="sync" id="sync"></span> · <button type="button" class="linkbtn" data-copyai>複製「用 AI 編輯」指令</button></p>`;
+const foot=d=>`<p class="foot">時段為預排，尚未代訂 · ${d?'<a href="#prep">行前預訂清單 ↗</a>':'<a href="#d1">回到 DAY 01 ↗</a>'}<br>${d&&d.mapNote?esc(d.mapNote)+' · ':''}最後更新：${fmtTime(data.updated)||'—'} · 照片依各圖來源標註<br><span class="sync" id="sync"></span> · <button type="button" class="linkbtn" data-copyai>複製「用 AI 編輯」指令</button> · <button type="button" class="linkbtn" data-dup>做一份自己的網站</button></p>`;
 const N=()=>data.days.length;
 const SHORT=()=>plain((data.trip||{}).title)||'旅行行程';
 const LABEL=()=>[plain((data.trip||{}).travelers),SHORT()].filter(Boolean).join(' 的');
@@ -117,7 +117,10 @@ const aiBox=()=>`<section class="aibox"><h2>用 AI 編輯行程</h2><p>接上之
 <div class="aitabs" role="tablist"><button type="button" role="tab" class="aitab" aria-selected="${S.aiTab==='claude'}" data-aitab="claude">Claude 聊天</button><button type="button" role="tab" class="aitab" aria-selected="${S.aiTab==='chatgpt'}" data-aitab="chatgpt">ChatGPT</button><button type="button" role="tab" class="aitab" aria-selected="${S.aiTab==='code'}" data-aitab="code">Claude Code・Codex 等</button></div>
 ${S.aiTab==='claude'?`<ol class="aisteps"><li>在 <a href="https://claude.ai/settings/connectors" target="_blank" rel="noopener">claude.ai → 設定 → 連接器</a> 按「新增自訂連接器」</li><li>名稱填「${esc(SHORT())}」，網址貼上下面這行，不用填 OAuth</li><li>回到對話，在輸入框的「＋」→ 連接器打開「${esc(SHORT())}」，就可以開始聊（手機 App 也能用）</li></ol><pre>${MCP_URL}</pre><button type="button" class="chip pri" data-copy="${MCP_URL}">複製網址</button><p class="aisub">免費方案可加 1 個自訂連接器；Team／Enterprise 需由管理員先加入。</p>`
 :S.aiTab==='chatgpt'?`<ol class="aisteps"><li>ChatGPT 網頁版 → 設定 → 應用程式（Apps）→ 進階設定，開啟「開發者模式」</li><li>按「建立應用程式」：名稱「${esc(SHORT())}」，MCP 伺服器網址貼上下面這行，驗證選「無」，勾選信任後建立</li><li>新對話的「＋」→ 更多 → 選「${esc(SHORT())}」，就可以開始聊</li></ol><pre>${MCP_URL}</pre><button type="button" class="chip pri" data-copy="${MCP_URL}">複製網址</button><p class="aisub">開發者模式需要付費方案。免費帳號：建立一個自訂 GPT，在「動作」用「從網址匯入」貼上 ${ORIGIN}/openapi.json ，驗證選「無」，隱私權政策填 ${ORIGIN}/privacy.html 。</p>`
-:`<p>把這句貼給 Claude Code、Codex、Cursor、Gemini CLI 等能執行指令的 AI，它會自己完成連線：</p><pre id="aiPrompt">${esc(AI_PROMPT())}</pre><button type="button" class="chip pri" data-copyai>複製這句</button><p class="aisub">想要一份自己的行程網站（自己的網址與資料庫，部署到你的 Vercel 帳號）？把這句貼給同一個 AI：</p><pre>${esc(DUP_PROMPT())}</pre><button type="button" class="chip" data-copy="${esc(DUP_PROMPT())}">複製這句</button>`}</section>`;
+:`<p>把這句貼給 Claude Code、Codex、Cursor、Gemini CLI 等能執行指令的 AI，它會自己完成連線：</p><pre id="aiPrompt">${esc(AI_PROMPT())}</pre><button type="button" class="chip pri" data-copyai>複製這句</button>`}</section>`;
+// 做一份自己的網站：獨立區塊，不管選哪個 AI 分頁都看得到
+const dupBox=()=>`<section class="aibox dupbox" id="dupBox"><h2>做一份自己的行程網站</h2><p>自己的網址與資料庫，部署到你的 Vercel 帳號，不會改到這個網站。把這句貼給你的 AI：</p><pre>${esc(DUP_PROMPT())}</pre><button type="button" class="chip pri" data-copy="${esc(DUP_PROMPT())}" data-copymsg="已複製，貼給你的 AI 即可">複製這句</button><p class="aisub">Claude Code、Codex 等能執行指令的 AI 會全自動完成，你只需要登入 Vercel；Claude 聊天、ChatGPT 會給你一個一鍵部署連結。</p></section>`;
+function goDup(){const show=()=>{const el=$('#dupBox');if(el)el.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'start'})};if($('#dupBox'))return show();location.hash='#prep';setTimeout(show,450)}
 async function copyText(v,msg){try{await navigator.clipboard.writeText(v)}catch(e){const t=document.createElement('textarea');t.value=v;document.body.appendChild(t);t.select();try{document.execCommand('copy')}catch(_){}t.remove()}toast(msg)}
 // 分享：手機用系統分享，其他複製到剪貼簿。朋友把這句貼給自己的 AI，就會接好 MCP 並打開網站
 async function shareSite(){const text=AI_PROMPT();
@@ -198,7 +201,7 @@ function panelCover(){const t=data.trip||DEFAULT_TRIP,C=data.checks,done=C.filte
   </div>
  </div>
 </section>
-<section class="cv-sec cv-in">${aiBox()}<details class="det" id="hist"><summary>修改紀錄（可還原）</summary><div class="dc" id="histList"><p class="simple">展開後載入…</p></div></details>${foot(null)}</section>
+<section class="cv-sec cv-in">${aiBox()}${dupBox()}<details class="det" id="hist"><summary>修改紀錄（可還原）</summary><div class="dc" id="histList"><p class="simple">展開後載入…</p></div></details>${foot(null)}</section>
 </div>`}
 
 /* ---------- render ---------- */
@@ -483,13 +486,14 @@ document.addEventListener('toggle',e=>{if(e.target.id==='hist'&&e.target.open)lo
 
 /* ---------- events ---------- */
 document.addEventListener('click',e=>{
- const t=e.target.closest('[data-pick],[data-step],[data-photo],[data-showmap],[data-rain],[data-all],[data-go],[data-edit],[data-move],[data-del],[data-add],[data-editday],[data-editcheck],[data-delcheck],[data-addcheck],[data-editnote],[data-delnote],[data-addnote],[data-addday],[data-restore],[data-copyai],[data-share],[data-copy],[data-aitab],[data-ptab],[data-edittrip],[data-scrollto]');
+ const t=e.target.closest('[data-pick],[data-step],[data-photo],[data-showmap],[data-rain],[data-all],[data-go],[data-edit],[data-move],[data-del],[data-add],[data-editday],[data-editcheck],[data-delcheck],[data-addcheck],[data-editnote],[data-delnote],[data-addnote],[data-addday],[data-restore],[data-copyai],[data-share],[data-dup],[data-copy],[data-aitab],[data-ptab],[data-edittrip],[data-scrollto]');
  if(!e.target.closest('.search,.msearch,#msBtn'))$$('.results').forEach(r=>r.classList.remove('show'));
  if(!e.target.closest('.dpick'))setDayMenu(false);else if(e.target.closest('#dmenu a'))setDayMenu(false);
  if(!t)return;const ds=t.dataset;
  if(ds.copyai!==undefined){copyAI();return}
  if(ds.share!==undefined){shareSite();return}
- if(ds.copy){copyText(ds.copy,'已複製網址');return}
+ if(ds.dup!==undefined){goDup();return}
+ if(ds.copy){copyText(ds.copy,ds.copymsg||'已複製網址');return}
  if(ds.aitab){S.aiTab=ds.aitab;renderPanel();return}
  if(ds.ptab){S.ptab=ds.ptab;lsSet('bali-ptab',ds.ptab);renderPanel();const b=document.getElementById('pt-'+ds.ptab);if(b)b.focus({preventScroll:true});return}
  if(ds.scrollto){const el=document.getElementById(ds.scrollto);if(el)el.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'start'});return}
