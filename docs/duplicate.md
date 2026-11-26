@@ -16,11 +16,17 @@
 
 **一定要先問、等使用者回答後才開始第 2 步。** 不要自己編答案或用範例值；選填的題目使用者說跳過才跳過。
 
+**用你的提問工具問**：如果你有讓使用者點選答案的工具（選項按鈕、表單，例如 Claude Code 的 AskUserQuestion），請用它。第 5 題做成四個選項；其他題目讓使用者自由輸入（工具有「其他」欄位就用它）。沒有這種工具就用文字問，第 5 題把四個選項列出來。之後第 3b 步確認帳號、第 8 步問行程細節時也一樣。
+
 1. 這趟旅程叫什麼？（例如「羅馬七日」）
 2. 目的地？（英文，例如 Rome, Italy）
 3. 出發／回程日期？（可以之後再補）
 4. 跟誰一起去？（顯示在封面，可略）
-5. 要**複製 {{SHORT}} 目前的行程**當範本再改（copy），還是**從空白開始**（blank）？
+5. 新網站一開始的行程要怎麼來？（四選一）
+   - **沿用 {{SHORT}} 目前的行程**（copy）：複製現在的行程當範本，之後再改。
+   - **我已經有行程表**（import）：部署好後貼上文字、檔案、連結或截圖，你幫他整理填進去。
+   - **讓 AI 幫我排**（plan）：部署好後再問天數、想去的地方、步調與預算，由你排好每天的行程。
+   - **從空白開始**（blank）：只留第一天，之後自己慢慢加。
 6. 網址名稱：英文小寫、數字與 `-`，例如 `rome-2027` → 網址會是 `rome-2027.vercel.app`（被用走時 Vercel 會自動加後綴）。
 
 如果你有這個網站的 MCP 工具，可以把答案傳給 `duplicate_site`，它會回傳已經填好名稱的指令。下面用 `<名稱>` 代表第 6 題的答案。
@@ -86,7 +92,7 @@ npx -y vercel@latest --scope <團隊> integration add supabase --name <名稱>-d
   printf %s copy | npx -y vercel@latest --scope <團隊> env add SEED production
   printf %s {{SITE}} | npx -y vercel@latest --scope <團隊> env add SEED_FROM production
   ```
-- 空白開始（blank）：
+- 其他三種（import、plan、blank）都從空白開始，部署後在第 8 步由你填內容：
   ```
   printf %s blank | npx -y vercel@latest --scope <團隊> env add SEED production
   ```
@@ -120,17 +126,21 @@ curl -fsSL <新網址>/install.sh | sh
 
 用**新網站**的 MCP（`<新網址>/mcp`）：
 
-1. `update_trip`：填入第 1 步的標題、目的地、日期、同行的人；blank 的話再換一張有授權的封面照片。
+1. `update_trip`：填入第 1 步的標題、目的地、日期、同行的人。
 2. `set_theme`：依目的地設計配色、字體與地圖風格（規則見 `<新網址>/ai`）。
-3. 排好每天的行程（blank 或使用者已經給了行程時）：`add_day`／`update_day`、`add_place`（附 Google 地圖連結或地名）。
-4. 照片：**每一天都要有照片**：封面「旅程一覽」的每日卡片會用當天項目的第 1 張照片，沒有照片就是一塊空白。替每天最有代表性的景點用 `add_photo` 加一張有授權的照片（Wikimedia Commons 最方便：`image_url` 用 `https://commons.wikimedia.org/wiki/Special:FilePath/<檔名>?width=1600`，填 `credit`（作者／授權，例如「Wikimedia / CC BY-SA 4.0」）與 `source`（檔案頁網址））；不要用沒有授權的圖片。copy 的話，範本裡和新目的地無關的照片要一起換掉或刪除。最後用 `get_itinerary` 檢查每天至少有一個項目 `photos` 不是空的。
+3. 依第 1 步第 5 題的選擇：
+   - **copy**：問他範本裡的天數與景點要保留、修改還是刪除（可用提問工具讓他勾選），照回答調整。
+   - **import**：請他把現有的行程表給你（貼上文字、上傳檔案、Google 文件或試算表連結、截圖都可以）。整理成每天的行程：`add_day`／`update_day`、`add_place`（附 Google 地圖連結或地名）、時間、餐廳與預訂資訊、`add_checklist_item` 行前待辦。看不清楚或缺的資訊問他，不要自己編。
+   - **plan**：再問幾件事（用提問工具）：每天的步調（悠閒／適中／緊湊）、一定想去的地方或想做的事、住宿區域、預算、同行者的需求（長輩、小孩、飲食限制）。然後排好每天的行程：`add_day`／`update_day`、`add_place`、`travel_mode`、餐廳、雨備與行前待辦；排完請他看過再調整。
+   - **blank**：不用排，第 4、5 步也可以跳過。
+4. 照片（copy、import、plan）：**每一天都要有照片**：封面「旅程一覽」的每日卡片會用當天項目的第 1 張照片，沒有照片就是一塊空白。替每天最有代表性的景點用 `add_photo` 加一張有授權的照片（Wikimedia Commons 最方便：`image_url` 用 `https://commons.wikimedia.org/wiki/Special:FilePath/<檔名>?width=1600`，填 `credit`（作者／授權，例如「Wikimedia / CC BY-SA 4.0」）與 `source`（檔案頁網址））；不要用沒有授權的圖片。copy 的話，範本裡和新目的地無關的照片要一起換掉或刪除。最後用 `get_itinerary` 檢查每天至少有一個項目 `photos` 不是空的。
 5. 封面照片：`update_trip` 的 `cover_from_item`（選一張最能代表這趟旅程的）或 `cover_image_url`。
 
 ## 9. 打開網站，交給使用者
 
 1. 打開新網站：macOS `open <新網址>/`、Linux `xdg-open <新網址>/`、Windows `start <新網址>/`。
 2. 告訴使用者：新網址、MCP 已接到哪些 AI 工具（第 7 步的結果）、重開對話後就能直接說「幫我改行程」。
-3. copy 的話，問他範本裡的天數與景點要保留、修改還是刪除；blank 的話問他要不要現在開始排行程。
+3. blank 的話告訴他網站已經準備好，之後隨時可以說「幫我加景點」或「幫我排行程」。
 4. 分享給旅伴：傳這句給對方，對方貼給自己的 AI 就會接好 MCP 並打開網站：「閱讀 <新網址>/ai ，幫我連上我們的行程並打開網站」。網站封面的「分享給旅伴」按鈕也會複製這句。
 
 ## 常見問題

@@ -103,7 +103,7 @@ const TOOLS = [
     project_name: str('新網站的專案名稱（英文小寫、數字、-，例如 rome-2027），會成為網址 <名稱>.vercel.app'),
     title: str('旅程標題，例如「羅馬七日」'), travelers: str('同行的人'), destination: str('目的地（英文），例如「Rome, Italy」'),
     start_date: str('出發日期 YYYY-MM-DD'), end_date: str('回程日期 YYYY-MM-DD'),
-    start_from: { type: 'string', enum: ['copy', 'blank'], description: 'copy＝複製這個網站目前的行程當範本再修改；blank＝從空白開始' },
+    start_from: { type: 'string', enum: ['copy', 'import', 'plan', 'blank'], description: 'copy＝沿用這個網站目前的行程當範本；import＝使用者已有行程表，部署後貼給你整理；plan＝部署後由你依使用者偏好排行程；blank＝從空白開始' },
   }), duplicateSite, true],
 ];
 const tripLabel = t => [t && t.travelers, t && t.title].filter(Boolean).join(' ') || '旅行行程';
