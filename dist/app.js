@@ -313,7 +313,7 @@ function focusLeg(){const d=day(),k=ROUTE.split?activeLeg(d):-1;if(!map||k<0||!R
  if(!b||!b.isValid()||b.getNorthEast().equals(b.getSouthWest()))return false;
  const i=insets(),sz=map.getSize(),ne=map.latLngToContainerPoint(b.getNorthEast()),sw=map.latLngToContainerPoint(b.getSouthWest());
  const inView=sw.x>=i.tl[0]&&ne.y>=i.tl[1]&&ne.x<=sz.x-i.br[0]&&sw.y<=sz.y-i.br[1],span=Math.max(ne.x-sw.x,sw.y-ne.y);
- if(inView&&span>=160)return true;
+ if(inView&&span>=Math.max(160,.3*Math.min(sz.x-i.tl[0]-i.br[0],sz.y-i.tl[1]-i.br[1])))return true;
  map.fitBounds(b,{paddingTopLeft:[i.tl[0]+30,i.tl[1]+30],paddingBottomRight:[i.br[0]+30,i.br[1]+30],maxZoom:17,animate:!matchMedia('(prefers-reduced-motion:reduce)').matches});return true}
 function focusMap(zoom){const d=day();if(!map||!d)return;const x=d.pins.find(x=>x.id===S.sel);if(!x)return fitDay();const i=insets();if(zoom&&map.getZoom()<14)map.setView(x.pt.latlng,15);map.panInside(x.pt.latlng,{paddingTopLeft:i.tl,paddingBottomRight:i.br})}
 
