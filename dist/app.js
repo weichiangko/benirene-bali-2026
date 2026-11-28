@@ -139,9 +139,6 @@ function panelDay(d){const n=pad(d.idx),cnt=d.pins.length;
  const add=S.edit?`<button type="button" class="addbtn" data-add="${d.id}">＋ 新增景點</button>`:'';
  const addTop=S.edit?`<button type="button" class="pill addpill" data-add="${d.id}">＋ 新增景點</button>`:'';
  return grab(d.title,`${d.area} · ${cnt} 個地標`)+`<div class="sc-wrap">${curSheet(d)}</div><div class="scroll" id="scroll"><header class="dh only-desk"><span class="eyebrow">DAY ${n} · ${esc(d.date)}</span><h1>${esc(d.title)}</h1><span class="meta">${esc(d.area)} · 2 人同行 · ${cnt} 個地標</span><p>${esc(d.note)}</p></header><p class="sum only-touch">${layout==='phone'?esc(d.area)+' · ':''}${esc(d.note)}</p>${addTop?`<div class="tools touchtools only-touch">${addTop}</div>`:''}${eday}<div class="tools only-desk">${addTop}<button class="pill rainbtn" data-rain aria-pressed="${S.rain}">雨天安排 ☂</button><button class="pill allbtn" data-all aria-pressed="${S.all}">${S.all?'全部收合':'全部展開'}</button></div><div class="tl">${d.items.length?d.items.map(rowHtml).join(''):`<p class="simple">這天還沒有項目。${S.edit?'點「新增景點」貼上 Google 地圖連結就能加入。':'按「編輯」即可新增，或請 AI 幫忙加入。'}</p>`}</div>${add}<div class="daybtns only-desk"><a href="${d.idx===1?'#prep':'#d'+(d.idx-1)}">${d.idx===1?'← 封面・行前':'← 前一天'}</a>${d.idx===N()?'':`<a class="next" href="#d${d.idx+1}">後一天 →</a>`}</div>${foot(d)}</div>`}
-// 預訂入口只列還要處理的：已訂、已確認、已購買、套票已含等不再列出（同一網址只列一次）
-const BOOKED=/已(訂|預訂|預約|確認|購買|付款|付|完成)|隨套票|套票含|含接送|不需(訂|預約)|免預約|現場(候位|購買|入店)/;
-function quickLinks(d){const seen=new Set();return d.items.filter(x=>x.bookUrl&&!BOOKED.test(plain(x.reserve))&&!seen.has(x.bookUrl)&&seen.add(x.bookUrl)).map(x=>ext(x.bookUrl,esc(x.ttl))).join('')}
 // 純文字裡的 [文字](網址) 與裸網址，改成句子裡的小按鈕（網站名稱＋↗），不顯示一長串網址
 const SITE_NAMES=[[/airbnb\./,'Airbnb'],[/(maps\.app\.goo\.gl|google\.[a-z.]+\/maps|goo\.gl\/maps)/,'Google 地圖'],[/klook\./,'Klook'],[/booking\.com/,'Booking.com'],[/agoda\./,'Agoda'],[/kkday\./,'KKday'],[/instagram\./,'Instagram'],[/facebook\.|fb\.com/,'Facebook'],[/wa\.me|whatsapp\./,'WhatsApp'],[/tripadvisor\./,'Tripadvisor'],[/momence\./,'Momence'],[/telkomsel\./,'Telkomsel'],[/evisa\.imigrasi|imigrasi\.go\.id/,'印尼 e-Visa'],[/lovebali\./,'Love Bali'],[/youtube\.|youtu\.be/,'YouTube']];
 function siteName(u){const v=String(u).toLowerCase();for(const[re,n]of SITE_NAMES)if(re.test(v))return n;try{const h=new URL(u).hostname.replace(/^www\./,'');const p=h.split('.');return p.length>2&&p[p.length-2].length<=3?p[p.length-3]:p[p.length-2]||h}catch(e){return '連結'}}
@@ -179,11 +176,11 @@ function panelCover(){const t=data.trip||DEFAULT_TRIP,C=data.checks,done=C.filte
  const ckHtml=c=>`<div class="checkw"><label class="check ${c.done?'done':''}"><input type="checkbox" data-check="${esc(c.id)}" ${c.done?'checked':''} ${canEdit()?'':'disabled'}><span><strong>${linkify(c.title)}</strong><small>${linkify(c.detail)}</small></span></label>${S.edit?`<div class="ebar"><button type="button" class="ebtn" data-editcheck="${esc(c.id)}">✎ 編輯</button><button type="button" class="ebtn del" data-delcheck="${esc(c.id)}">刪除</button></div>`:''}</div>`;
  const notesOn=t.notes_enabled!==false,tab=notesOn?S.ptab:'prep';
  const notes=data.extras.map(n=>`<details class="det" ${data.extras.length===1?'open':''}><summary>${esc(n.title)}</summary><div class="dc">${noteHtml(n)}${S.edit?`<div class="ebar"><button type="button" class="ebtn" data-editnote="${esc(n.id)}">✎ 編輯</button><button type="button" class="ebtn del" data-delnote="${esc(n.id)}">刪除</button></div>`:''}</div></details>`).join('');
- // 待辦與預訂入口合成一份清單：沒有日期的放「出發前・整趟」，其餘依標題日期歸到那一天
+ // 待辦清單（訂位、購票也都是待辦）：沒有日期的放「出發前・整趟」，其餘依標題日期歸到那一天
  const dayOf=c=>{const m=plain(c.title).match(/(\d{1,2})\/(\d{1,2})/);if(!m)return null;return data.days.find(d=>plain(d.date).startsWith(`${+m[1]}/${+m[2]}`))||null};
  const byDay=new Map(),general=[];ckSort(C).forEach(c=>{const d=dayOf(c);if(d){if(!byDay.has(d.id))byDay.set(d.id,[]);byDay.get(d.id).push(c)}else general.push(c)});
- const grp=(label,sub,items,links,key)=>`<div class="pg" ${key?`data-pg="${key}"`:''}><div class="pgh"><span class="pgd">${label}</span><span class="pgt">${sub}</span></div><div class="pgb">${items.length?`<div class="checks">${items.map(ckHtml).join('')}</div>`:''}${links?`<div class="pgl"><span class="pgk">預訂入口</span><span class="chips">${links}</span></div>`:''}</div></div>`;
- const groups=[general.length?grp('出發前','<b>整趟旅程</b><small>住宿、網卡、交通等</small>',general,'',''):'',...data.days.map(d=>{const its=byDay.get(d.id)||[],q=quickLinks(d);return its.length||q?grp(`D${d.idx}`,`<b>${esc(d.title)}</b><small>${esc(d.date)}</small>`,its,q,d.idx):''})].join('');
+ const grp=(label,sub,items,links,key,addDate)=>`<div class="pg" ${key?`data-pg="${key}"`:''}><div class="pgh"><span class="pgd">${label}</span><span class="pgt">${sub}</span></div><div class="pgb">${items.length?`<div class="checks">${items.map(ckHtml).join('')}</div>`:''}${links?`<div class="pgl"><span class="pgk">預訂入口</span><span class="chips">${links}</span></div>`:''}${S.edit?`<button type="button" class="addbtn sm" data-addcheck="${esc(addDate||'')}">＋ ${addDate?'在這天新增待辦':'新增整趟待辦'}</button>`:''}</div></div>`;
+ const groups=[general.length||S.edit?grp('出發前','<b>整趟旅程</b><small>住宿、網卡、交通等</small>',general,'','',''):'',...data.days.map(d=>{const its=byDay.get(d.id)||[];const md=(plain(d.date).match(/\d{1,2}\/\d{1,2}/)||[''])[0];return its.length||S.edit?grp(`D${d.idx}`,`<b>${esc(d.title)}</b><small>${esc(d.date)}</small>`,its,'',d.idx,md):''})].join('');
  return `<div class="scroll cover" id="scroll">
 <section class="hero${img?'':' noimg'}${S.heroAnim?' anim':''}">${img}<div class="hero-shade"></div>
  <div class="hero-in cv-in">
@@ -201,7 +198,7 @@ function panelCover(){const t=data.trip||DEFAULT_TRIP,C=data.checks,done=C.filte
    <button type="button" role="tab" id="pt-notes" aria-controls="pp" aria-selected="${S.ptab==='notes'}" data-ptab="notes"><span>${esc(t.notes_title||'入境與須知')}</span><span class="pn">${data.extras.length}</span></button>
   </div>`:''}
   <div class="ppanel" id="pp" ${notesOn?`role="tabpanel" aria-labelledby="pt-${tab}"`:''}>
-  ${tab==='prep'?`<div class="prog"><span id="progT">已確認 ${done} / ${C.length} 項 · 依日期排列，完成的排在每組最後</span><div class="bar"><i id="progB" style="width:${pct}%"></i></div></div><div class="pgs">${groups||'<p class="simple">還沒有待辦或預訂。</p>'}</div>${S.edit?'<button type="button" class="addbtn" data-addcheck>＋ 新增待辦（標題寫上日期，例如 12/30，會自動排到那一天）</button>':''}<p class="foot">預訂入口會開啟店家或票券的官方頁面；出發前請再核對最新規定。</p>`
+  ${tab==='prep'?`<div class="prog"><span id="progT">已確認 ${done} / ${C.length} 項 · 依日期排列，完成的排在每組最後</span><div class="bar"><i id="progB" style="width:${pct}%"></i></div></div>${S.edit?'<button type="button" class="addbtn" data-addcheck="">＋ 新增待辦</button>':''}<div class="pgs">${groups||'<p class="simple">還沒有待辦或預訂。</p>'}</div><p class="foot">預訂入口會開啟店家或票券的官方頁面；出發前請再核對最新規定。</p>`
   :`<div class="notes">${notes||'<p class="simple">還沒有說明區塊。</p>'}</div>${S.edit?'<button type="button" class="addbtn" data-addnote>＋ 新增說明區塊</button>':''}`}
   </div>
  </div>
@@ -214,8 +211,14 @@ function renderPanel(keepScroll=true){const sc=$('#scroll'),top=keepScroll&&sc?s
 function renderCur(){const d=day(),f=$('#curf');f.innerHTML=curFloat(d);f.hidden=!d||!d.pins.length;const w=$('.sc-wrap');if(w)w.innerHTML=curSheet(d)}
 function dayMenuHtml(){const days=data.days.map(d=>`<a href="#d${d.idx}" ${S.day===d.idx?'aria-current="page"':''}><span class="dmn">${pad(d.idx)}</span><span class="dmt"><b>${esc(d.date)}</b><small>${esc(d.title)}</small></span></a>`).join('');return `<a href="#prep" ${S.day===0?'aria-current="page"':''}><span class="dmn">✦</span><span class="dmt"><b>封面・行前資料</b><small>${esc((data.trip||{}).title||'旅程總覽')} · 待辦與預訂</small></span></a><div class="dsep"></div>`+days}
 function setDayMenu(open){const menu=$('#dmenu'),btn=$('#mlabel');if(!menu||!btn)return;menu.hidden=!open;btn.setAttribute('aria-expanded',String(open));if(open)closeSearch()}
+function dayOverflow(center){const n=$('#days');if(!n)return;
+ if(center){const c=n.querySelector('[aria-current=page]');if(c){const prev=n.style.scrollBehavior;n.style.scrollBehavior='auto';n.scrollLeft=c.offsetLeft-(n.clientWidth-c.offsetWidth)/2;n.style.scrollBehavior=prev}}
+ const max=n.scrollWidth-n.clientWidth,x=n.scrollLeft,L=x>4,R=x<max-4;
+ n.classList.toggle('fade-l',L);n.classList.toggle('fade-r',R);
+ $('#dscrL').hidden=!L;$('#dscrR').hidden=!R;}
 function renderChrome(){
  $('#days').innerHTML=`<a href="#prep" class="cvtab" ${S.day===0?'aria-current="page"':''}><span class="dn">✦</span><span class="dd">封面・行前</span></a><i class="dsep2" aria-hidden="true"></i>`+data.days.map(d=>`<a href="#d${d.idx}" ${S.day===d.idx?'aria-current="page"':''}><span class="dn">${pad(d.idx)}</span><span class="dd">${esc(d.date)}</span></a>`).join('')+'';
+ dayOverflow(true);requestAnimationFrame(()=>dayOverflow(true));
  const d=day();$('#mlabel').innerHTML=d?`<small>DAY ${pad(d.idx)} / ${pad(N())}</small><b>${esc(d.date)}<i aria-hidden="true"></i></b>`:'<small>OVERVIEW</small><b>封面・行前<i aria-hidden="true"></i></b>';
  $('#mlabel').setAttribute('aria-label',d?`選擇日期，目前第 ${d.idx} 天，${d.date}`:'選擇日期，目前為行前資料');
  $('#dmenu').innerHTML=dayMenuHtml();
@@ -518,7 +521,7 @@ document.addEventListener('click',e=>{
  else if(ds.addday!==undefined)openEditor('day',{position:nextPos(raw.days),date:'',title:'',area:'',note:'',breakfast:'',map_note:''});
  else if(ds.editcheck){const r=raw.checks.find(r=>r.id===ds.editcheck);if(r)openEditor('check',r)}
  else if(ds.delcheck){const r=raw.checks.find(r=>r.id===ds.delcheck);if(r)delRow('checks',r.id,r.title)}
- else if(ds.addcheck!==undefined)openEditor('check',{position:nextPos(raw.checks),title:'',detail:'',done:false});
+ else if(ds.addcheck!==undefined)openEditor('check',{position:nextPos(raw.checks),title:ds.addcheck?ds.addcheck+' ':'',detail:'',done:false});
  else if(ds.editnote){const r=raw.notes.find(r=>r.id===ds.editnote);if(r)openEditor('note',r)}
  else if(ds.delnote){const r=raw.notes.find(r=>r.id===ds.delnote);if(r)delRow('notes',r.id,r.title)}
  else if(ds.addnote!==undefined)openEditor('note',{position:nextPos(raw.notes),title:'',paragraphs:[]});
@@ -622,3 +625,10 @@ boot();
  try{const rpc=async(method,params)=>(await (await fetch(API+'/api/mcp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})})).json()).result;
   const{tools}=await rpc('tools/list');
   tools.forEach(t=>{try{mc.registerTool({name:t.name,description:t.description,inputSchema:t.inputSchema,annotations:t.annotations,execute:async args=>{const r=await rpc('tools/call',{name:t.name,arguments:args||{}});refresh(0);return r}})}catch(e){}})}catch(e){}})();
+(function(){const n=$('#days');if(!n)return;
+ n.addEventListener('scroll',()=>dayOverflow(false),{passive:true});
+ n.addEventListener('wheel',e=>{if(Math.abs(e.deltaY)>Math.abs(e.deltaX)){e.preventDefault();n.scrollBy({left:e.deltaY,behavior:'auto'})}},{passive:false});
+ $('#dscrL').onclick=()=>n.scrollBy({left:-n.clientWidth*.7,behavior:'smooth'});
+ $('#dscrR').onclick=()=>n.scrollBy({left:n.clientWidth*.7,behavior:'smooth'});
+ addEventListener('resize',()=>dayOverflow(true));
+ if(window.ResizeObserver)new ResizeObserver(()=>dayOverflow(false)).observe(n)})();

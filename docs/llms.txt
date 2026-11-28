@@ -89,12 +89,12 @@ curl -s -X POST {{SITE}}/mcp -H 'Content-Type: application/json' \
 
 ## 封面、行前資料與網站風格
 
-網站第一頁是「封面＋行前資料」（`#prep`，沒有地圖）：封面照片、旅程標題、出發倒數、旅程一覽、出發前待辦、入境須知、各日預訂入口。
+網站第一頁是「封面＋行前資料」（`#prep`，沒有地圖）：封面照片、旅程標題、出發倒數、旅程一覽、出發前待辦（含訂位、購票）、入境須知。
 
 - 封面：`update_trip`（title、subtitle、travelers、destination、start_date、end_date、intro、封面照片、prep_title、prep_intro）。封面照片可用 `cover_from_item`（行程裡某項目的照片）或 `cover_image_url`（伺服器會下載並存一份）；主體被裁到時調 `cover_focus`，例如 `center 30%`。
 - 行前區塊有兩個分頁：「待辦與預訂」（一定有）和「須知」（可開關）。**國外行程**打開須知（`update_trip` 的 `notes_enabled: true`，名稱用 `notes_title`，預設「入境與須知」），寫簽證、入境申報、旅遊稅、海關；**國內行程**通常用 `notes_enabled: false` 關掉，只留待辦與預訂。
 - 須知內容用 `save_note_section`，網站會排成步驟清單：前言一段（可省略）→ 每個步驟一行短標題「時間：要做的事」（例如「12/15 前：申請 e-VOA」，不加句號）＋一段內容（每句以「。」結尾，會變成條列點）→ 最後一段只放連結 `[名稱](網址)｜[名稱](網址)`，會變成參考連結按鈕。
-- 行前待辦：`add_checklist_item`／`update_checklist_item`／`delete_checklist_item`。標題開頭寫日期（例如「12/30 …」）會自動歸到那一天，和當天的預訂入口一起顯示；整趟通用的（網卡、住宿、保險）不寫日期。說明區塊（簽證、入境、保險等）：`save_note_section`。
+- 行前待辦：`add_checklist_item`／`update_checklist_item`／`delete_checklist_item`。標題開頭寫日期（例如「12/30 …」）會自動歸到那一天；訂位、購票也寫成待辦，例如標題「12/29 訂位｜Alma Berawa」、說明寫人數與注意事項並附 `[訂位頁](https://…)` 連結，訂好就勾選完成；整趟通用的（網卡、住宿、保險）不寫日期。說明區塊（簽證、入境、保險等）：`save_note_section`。
 - 網站風格：`set_theme`。不要只套預設主題，請依目的地自己設計：
   1. 從目的地的文化、建築、自然色彩與封面照片的色調，挑 1 個主色（深、可放白字）、1 個強調色（地圖路線與重點，要在地圖上醒目）、淺色背景與卡片色。
   2. 傳完整的 `colors`（17 個欄位都給，`selected` 是選中項目的外框與標記色）、`fonts`（標題一個有個性的 Google Fonts 字體＋內文一個易讀字體，標明 serif／sans）、`map_style`，再取個 `name`。

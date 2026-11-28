@@ -698,7 +698,17 @@ svg{flex-shrink:0}
 .brand{display:flex;flex-direction:column;gap:2px;flex-shrink:0;text-decoration:none;color:var(--ink)}
 .brand b{font-family:var(--serif);font-size:22px;line-height:1;font-weight:400}
 .brand small{font-size:10px;letter-spacing:.16em;color:var(--muted)}
-.days{flex:1;min-width:0;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+.daywrap{flex:1;min-width:0;position:relative;display:flex;align-items:center}
+.days{position:relative;flex:1;min-width:0;display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}
+.days.fade-l{-webkit-mask-image:linear-gradient(90deg,transparent,#000 56px);mask-image:linear-gradient(90deg,transparent,#000 56px)}
+.days.fade-r{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 72px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 72px),transparent)}
+.days.fade-l.fade-r{-webkit-mask-image:linear-gradient(90deg,transparent,#000 56px,#000 calc(100% - 72px),transparent);mask-image:linear-gradient(90deg,transparent,#000 56px,#000 calc(100% - 72px),transparent)}
+.addbtn.sm{margin:10px 0 0;padding:8px 14px;font-size:13px}
+.dscr{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:32px;height:32px;padding:0;border-radius:50%;border:1px solid var(--line);background:var(--paper);color:var(--ink);display:flex;align-items:center;justify-content:center;gap:4px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12);font:inherit;font-size:12px}
+.dscr[hidden]{display:none}
+.dscr:hover{background:var(--soft)}
+.dscr.l{left:0}.dscr.r{right:0}
+
 .days::-webkit-scrollbar{display:none}
 .days a{flex-shrink:0;height:44px;padding:0 12px;border-radius:12px;display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--ink);background:transparent}
 .days a:hover{background:var(--soft);color:var(--ink)}
@@ -1319,7 +1329,7 @@ html,body{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adju
 <div class="app">
 <header class="topbar">
 <a class="brand" href="#d1"><b>旅行行程</b><small></small></a>
-<nav class="days" id="days" aria-label="每日行程"></nav>
+<div class="daywrap" id="daywrap"><button type="button" class="dscr l" id="dscrL" aria-label="往前捲動日期" hidden><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button><nav class="days" id="days" aria-label="每日行程"></nav><button type="button" class="dscr r" id="dscrR" aria-label="往後捲動日期" hidden><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg></button></div>
 <div class="search">
 <label><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5d6c65" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg><span class="sr">搜尋行程</span><input id="q" type="search" placeholder="搜尋餐廳、景點…" autocomplete="off"></label>
 <div class="results" id="qr" role="region" aria-label="搜尋結果"></div>
