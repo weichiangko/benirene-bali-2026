@@ -64,8 +64,8 @@ let refT=null,refBusy=false;
 function refresh(delay=250){clearTimeout(refT);refT=setTimeout(async()=>{if(refBusy){refresh(400);return}refBusy=true;try{raw=await fetchRemote();cacheRaw();synced=new Date();online=true;rebuild()}catch(e){if(!navigator.onLine)online=false;updateStatus()}finally{refBusy=false}},delay)}
 // 有天的地點變了、路線還沒重算 → 請伺服器重算（結果會透過即時同步回來）
 let routeT=null,routeAt=0;
-function needRoutes(){if(!sb||!online||!raw)return;const bad=data.days.some(d=>(d.row.route_sig||'')!==pinSig(d));if(!bad)return;clearTimeout(routeT);routeT=setTimeout(()=>{if(Date.now()-routeAt<15000)return;routeAt=Date.now();fetch(API+'/api/route',{method:'POST'}).catch(()=>{})},1200)}
-function rebuild(){build(raw);if(S.day>data.days.length)S.day=data.days.length||0;const d=day();if(d&&S.sel&&!d.items.some(x=>x.id===S.sel))S.sel=(d.pins[0]||d.items[0]||{}).id||null;renderChrome();renderPanel();drawMap();updateStatus();needRoutes()}
+function needRoutes(){if(!sb||!online||!raw)return;const oldFmt=g=>!!g&&!(g.type==='FeatureCollection'&&g.features.length&&g.features.every(f=>f.properties&&Number.isInteger(f.properties.leg)));const bad=data.days.some(d=>(d.row.route_sig||'')!==pinSig(d)||oldFmt(d.row.route_geometry));if(!bad)return;clearTimeout(routeT);routeT=setTimeout(()=>{if(Date.now()-routeAt<15000)return;routeAt=Date.now();fetch(API+'/api/route',{method:'POST'}).catch(()=>{})},1200)}
+function rebuild(){build(raw);if(S.day>data.days.length)S.day=data.days.length||0;const d=day();if(d&&S.sel&&!d.items.some(x=>x.id===S.sel))S.sel=null;renderChrome();renderPanel();drawMap();updateStatus();needRoutes()}
 
 /* ---------- 狀態 ---------- */
 const S={ptab:lsGet('bali-ptab')==='notes'?'notes':'prep',aiTab:'claude',day:1,sel:null,open:new Set(),all:false,rain:false,panel:true,snap:null,search:false,edit:lsGet('bali-edit')==='1',picking:null};
@@ -101,8 +101,9 @@ function rowHtml(x,_,arr){const d=x.day,sel=S.sel===x.id,exp=x.expandable&&(S.al
  const ttl=stop?`<span class="ttl">${esc(x.ttl)}</span>`:`<span class="ttl"><span class="tk">${esc(x.type)} · </span>${esc(x.ttl)}</span>`;
  return `<div class="row ${stop?'stop':'tr'}${dim?' dim':''}${sel?' sel':''}" id="r-${esc(x.id)}">${tcol}<div class="rail"><i></i>${stop?`<b class="dot">${x.n}</b>`:''}</div><article class="card"><button class="head" data-pick="${esc(x.id)}" aria-expanded="${exp}"><span class="hmain">${kl}${ttl}<span class="nt">${esc(x.nt)}</span>${stop?tagsHtml(x):''}</span><span class="sign" aria-hidden="true">${exp?'−':'+'}</span></button>${exp?bodyHtml(x):''}${S.edit?editBar(x,d):''}</article></div>`}
 function curIdx(d){const i=d.pins.findIndex(x=>x.id===S.sel);return i<0?0:i}
-function curFloat(d){if(!d||!d.pins.length)return'';const i=curIdx(d),x=d.pins[i],p=x.photos[0];return `<div class="cur-top">${p?`<button class="thumb" data-photo="${x.id}|0" aria-label="放大照片：${esc(p.title)}"><img src="${esc(p.image)}" alt=""></button>`:`<span class="thumb" aria-hidden="true">${ICON.pin}</span>`}<span class="cur-txt"><span class="eb">${x.n} · ${esc(x.range)} · ${esc(x.type)}</span><span class="ct">${esc(x.ttl)}</span><span class="cn">${esc(x.nt)}</span></span></div><div class="cur-nav"><button class="mbtn" data-step="-1" aria-label="上一站">${ICON.l}</button><span class="cnt">第 ${i+1} / ${d.pins.length} 站</span><button class="mbtn" data-step="1" aria-label="下一站">${ICON.r}</button><a class="go" href="${x.dir}" target="_blank" rel="noopener noreferrer">導航 ↗</a></div>`}
-function curSheet(d){if(!d||!d.pins.length)return'';const i=curIdx(d),x=d.pins[i];return `<div class="sc"><span class="badge">${x.n}</span><span class="sct"><span class="eb">${esc(x.range)} · ${esc(x.type)}</span><span class="ct">${esc(x.ttl)}</span></span><div class="scnav"><button class="mbtn" data-step="-1" aria-label="上一站">${ICON.l}</button><span class="cnt">第 ${i+1} / ${d.pins.length} 站</span><button class="mbtn" data-step="1" aria-label="下一站">${ICON.r}</button><a class="go" href="${x.dir}" target="_blank" rel="noopener noreferrer">導航 ↗</a></div></div>`}
+function curNone(d){return `<span class="cnt">全天 ${d.pins.length} 站 · 點一站看路段</span>`}
+function curFloat(d){if(!d||!d.pins.length)return'';if(!S.sel)return `<div class="cur-top"><span class="thumb" aria-hidden="true">${ICON.pin}</span><span class="cur-txt"><span class="eb">DAY ${pad(d.idx)} · 全天路線</span><span class="ct">${esc(d.title)}</span><span class="cn">${esc(d.area)}</span></span></div><div class="cur-nav"><button class="mbtn" data-step="-1" aria-label="最後一站">${ICON.l}</button>${curNone(d)}<button class="mbtn" data-step="1" aria-label="第一站">${ICON.r}</button></div>`;const i=curIdx(d),x=d.pins[i],p=x.photos[0];return `<div class="cur-top">${p?`<button class="thumb" data-photo="${x.id}|0" aria-label="放大照片：${esc(p.title)}"><img src="${esc(p.image)}" alt=""></button>`:`<span class="thumb" aria-hidden="true">${ICON.pin}</span>`}<span class="cur-txt"><span class="eb">${x.n} · ${esc(x.range)} · ${esc(x.type)}</span><span class="ct">${esc(x.ttl)}</span><span class="cn">${esc(x.nt)}</span></span></div><div class="cur-nav"><button class="mbtn" data-step="-1" aria-label="上一站">${ICON.l}</button><span class="cnt">第 ${i+1} / ${d.pins.length} 站</span><button class="mbtn" data-step="1" aria-label="下一站">${ICON.r}</button><a class="go" href="${x.dir}" target="_blank" rel="noopener noreferrer">導航 ↗</a></div>`}
+function curSheet(d){if(!d||!d.pins.length)return'';if(!S.sel)return `<div class="sc"><span class="badge" aria-hidden="true">${ICON.pin}</span><span class="sct"><span class="eb">全天路線</span><span class="ct">${esc(d.title)}</span></span><div class="scnav"><button class="mbtn" data-step="-1" aria-label="最後一站">${ICON.l}</button>${curNone(d)}<button class="mbtn" data-step="1" aria-label="第一站">${ICON.r}</button></div></div>`;const i=curIdx(d),x=d.pins[i];return `<div class="sc"><span class="badge">${x.n}</span><span class="sct"><span class="eb">${esc(x.range)} · ${esc(x.type)}</span><span class="ct">${esc(x.ttl)}</span></span><div class="scnav"><button class="mbtn" data-step="-1" aria-label="上一站">${ICON.l}</button><span class="cnt">第 ${i+1} / ${d.pins.length} 站</span><button class="mbtn" data-step="1" aria-label="下一站">${ICON.r}</button><a class="go" href="${x.dir}" target="_blank" rel="noopener noreferrer">導航 ↗</a></div></div>`}
 const grab=(title,meta)=>`<div class="grab" id="grab"><button class="handle" id="handle" aria-label="${S.snap==='full'?'收合行程清單':'展開行程清單'}"><span></span></button><div class="sheethead"><h1>${esc(title)}</h1>${meta?`<span class="meta">${esc(meta)}</span>`:''}</div></div>`;
 const fmtTime=s=>{if(!s)return'';const d=new Date(s);return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`};
 const foot=d=>`<p class="foot">時段為預排，尚未代訂 · ${d?'<a href="#prep">行前預訂清單 ↗</a>':'<a href="#d1">回到 DAY 01 ↗</a>'}<br>${d&&d.mapNote?esc(d.mapNote)+' · ':''}最後更新：${fmtTime(data.updated)||'—'} · 照片依各圖來源標註<br><span class="sync" id="sync"></span> · <button type="button" class="linkbtn" data-copyai>複製「用 AI 編輯」指令</button> · <button type="button" class="linkbtn" data-dup>做一份自己的網站</button></p>`;
@@ -255,12 +256,12 @@ function initMap(){if(typeof L==='undefined'){$('#map').innerHTML='<p style="pad
  setMapLayers();
  map.attributionControl.setPrefix('<a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a>');
  overlay=L.layerGroup().addTo(map);
- map.on('click',e=>{if(S.picking){const cb=S.picking;endPick();cb([+e.latlng.lat.toFixed(6),+e.latlng.lng.toFixed(6)])}})}
+ map.on('click',e=>{if(S.picking){const cb=S.picking;endPick();cb([+e.latlng.lat.toFixed(6),+e.latlng.lng.toFixed(6)])}else if(S.sel&&S.day)deselect()})}
 function pinIcon(html,cls){return L.divIcon({className:'pinw',html:`<div class="pin ${cls}">${html}</div>`,iconSize:[0,0],iconAnchor:[0,0]})}
 function drawMap(){if(!map)return;map.invalidateSize(false);overlay.clearLayers();markers={};const d=day();
  if(!d&&S.day===0)return;
  if(!d){const ps=[];data.days.forEach(dd=>dd.pins.forEach(x=>{ps.push(x);const m=L.marker(x.pt.latlng,{icon:pinIcon('D'+dd.idx,'daypin'),keyboard:true,title:`D${dd.idx} ${x.pt.name}`}).addTo(overlay);m.bindTooltip(`<b>D${dd.idx} · ${esc(x.pt.name)}</b><br>${esc(x.pt.time)}`,{direction:'top',offset:[0,-16],className:'map-tip'});m.on('click',()=>{location.hash='d'+dd.idx;setTimeout(()=>select(x.id,{open:true,scroll:true,pan:true}),60)})}));if(ps.length)fitAll();return}
- if(d.routeGeometry)drawRoute(d.routeGeometry);
+ ROUTE.legs={};ROUTE.split=false;if(d.routeGeometry)drawRoute(d.routeGeometry);
  else if(d.pins.length>1)L.polyline(d.pins.map(x=>x.pt.latlng),{color:cv('--gold'),weight:3,dashArray:'6 8',opacity:.9,interactive:false}).addTo(overlay);
  d.pins.forEach(x=>{if(x.pt.key==='batur')L.circle(x.pt.latlng,{radius:1500,color:cv('--gold'),weight:1,fillOpacity:.07,dashArray:'5 6',interactive:false}).addTo(overlay)});
  // 同一個地點的站（例如起點和終點都是住宿）合成一個標記，標成「1·5」，不然後面的號碼會蓋住前面的
@@ -269,34 +270,47 @@ function drawMap(){if(!map)return;map.invalidateSize(false);overlay.clearLayers(
   const m=L.marker(x.pt.latlng,{icon:pinIcon(g.map(y=>y.n).join('·'),multi?'multi':''),keyboard:true,draggable:S.edit&&canEdit(),title:g.map(y=>`第 ${y.n} 站：${y.ttl}`).join('；')}).addTo(overlay);
   m.bindTooltip(multi?g.map(y=>`<b>${y.n} · ${esc(y.pt.name)}</b> ${esc(y.pt.time)}`).join('<br>')+(S.edit?'<br><small>拖動會一起移動這幾站</small>':''):`<b>${esc(x.pt.name)}</b><br>${esc(x.pt.time)}${S.edit?'<br><small>拖動可移動位置</small>':''}`,{direction:'top',offset:[0,-22],className:'map-tip'});
   // 合併的標記：再點一次換到下一站
-  m.on('click',()=>{const i=g.findIndex(y=>y.id===S.sel);select(g[i<0?0:(i+1)%g.length].id,{open:true,scroll:true,pan:false})});
+  m.on('click',()=>{const i=g.findIndex(y=>y.id===S.sel);if(i===g.length-1)return deselect();select(g[i+1].id,{open:true,scroll:true,pan:false})});
   m.on('dragend',()=>{const p=m.getLatLng(),ll=[+p.lat.toFixed(6),+p.lng.toFixed(6)];g.forEach(y=>moveItemTo(y,ll))});
   g.forEach(y=>markers[y.id]=m)});
  fitDay();updatePins()}
 // 開車：沿道路實線；搭船：長虛線；搭飛機：點線；算不出路線（straight）：短虛線
 const MODE_STYLE={car:null,boat:{dashArray:'12 9',weight:3},plane:{dashArray:'2 9',weight:3.5,lineCap:'round'},straight:{dashArray:'6 8',weight:3}};
 const MODE_NAME={car:'開車',boat:'搭船',plane:'搭飛機',straight:'直線（查無道路）'};
+// ROUTE.legs[k]：第 k 段（第 k+1 站到第 k+2 站）的圖層；舊資料沒有 leg 編號時 split=false，整條一起亮
+const ROUTE={legs:{},split:false};
 function drawRoute(g){const feats=g.type==='FeatureCollection'?g.features:[{type:'Feature',properties:{mode:'car'},geometry:g}];
+ ROUTE.legs={};ROUTE.split=feats.length>0&&feats.every(f=>f.properties&&Number.isInteger(f.properties.leg));
+ const add=(f,style,op,tip)=>{const l=L.geoJSON(f,{style:{...style,opacity:op},interactive:!!tip});if(tip)l.bindTooltip(tip,{sticky:true,className:'map-tip'});l.addTo(overlay);const k=ROUTE.split?f.properties.leg:-1;(ROUTE.legs[k]=ROUTE.legs[k]||[]).push({l,op})};
  feats.forEach(f=>{const m=(f.properties&&f.properties.mode)||'car',st=m in MODE_STYLE?MODE_STYLE[m]:MODE_STYLE.straight;
   // 路線要跟底圖道路分得開：白色光暈 → 深色描邊 → 強調色主線
   const R={lineJoin:'round',lineCap:'round',interactive:false};
-  if(!st){L.geoJSON(f,{style:{...R,color:'#fff',weight:12,opacity:.9}}).addTo(overlay);L.geoJSON(f,{style:{...R,color:cv('--brown'),weight:7.5,opacity:1}}).addTo(overlay);L.geoJSON(f,{style:{...R,color:cv('--gold'),weight:4.5,opacity:1}}).addTo(overlay)}
-  else{L.geoJSON(f,{style:{...R,color:'#fff',weight:st.weight+7,opacity:.85}}).addTo(overlay);L.geoJSON(f,{style:{color:cv('--gold'),opacity:1,...st,weight:st.weight+1.5,lineCap:st.lineCap||'butt'},interactive:true}).bindTooltip(MODE_NAME[m],{sticky:true,className:'map-tip'}).addTo(overlay)}})}
+  if(!st){add(f,{...R,color:'#fff',weight:12},.9);add(f,{...R,color:cv('--brown'),weight:7.5},1);add(f,{...R,color:cv('--gold'),weight:4.5},1)}
+  else{add(f,{...R,color:'#fff',weight:st.weight+7},.85);add(f,{color:cv('--gold'),...st,weight:st.weight+1.5,lineCap:st.lineCap||'butt'},1,MODE_NAME[m])}})}
+// 選到某站：亮它到下一站那段（最後一站亮抵達那段）；選到交通等沒有位置的項目：亮它所在的那段；沒選：整條都亮
+function activeLeg(d){if(!d||!S.sel||d.pins.length<2)return -1;const n=d.pins.length,p=d.pins.findIndex(x=>x.id===S.sel);
+ if(p>=0)return p<n-1?p:p-1;
+ let last=-1;for(const x of d.items){if(x.id===S.sel)break;const i=d.pins.indexOf(x);if(i>=0)last=i}
+ return last>=0&&last<n-1?last:-1}
+function styleRoute(){const k=ROUTE.split?activeLeg(day()):-1;
+ Object.entries(ROUTE.legs).forEach(([leg,ls])=>{const on=k<0||+leg===k;ls.forEach(({l,op})=>l.setStyle({opacity:on?op:op*.25}))});
+ if(k>=0&&ROUTE.legs[k])ROUTE.legs[k].forEach(({l})=>l.bringToFront())}
 function routeCoords(g){if(!g)return[];const fs=g.type==='FeatureCollection'?g.features.map(f=>f.geometry):[g];return fs.flatMap(x=>x.coordinates.map(c=>[c[1],c[0]]))}
-function updatePins(){const d=day();if(!d)return;const st=new Map();d.pins.forEach(x=>{const m=markers[x.id];if(!m)return;const o=st.get(m)||{sel:false,rain:false};o.sel=o.sel||x.id===S.sel;o.rain=o.rain||!!x.hasRain;st.set(m,o)});st.forEach((o,m)=>{const el=m.getElement();if(!el)return;const p=el.firstChild;p.classList.toggle('sel',o.sel);p.classList.toggle('dim',S.rain&&!o.rain);el.classList.toggle('on',o.sel)})}
+function updatePins(){const d=day();if(!d)return;const st=new Map();d.pins.forEach(x=>{const m=markers[x.id];if(!m)return;const o=st.get(m)||{sel:false,rain:false};o.sel=o.sel||x.id===S.sel;o.rain=o.rain||!!x.hasRain;st.set(m,o)});st.forEach((o,m)=>{const el=m.getElement();if(!el)return;const p=el.firstChild;p.classList.toggle('sel',o.sel);p.classList.toggle('dim',S.rain&&!o.rain);el.classList.toggle('on',o.sel)});styleRoute()}
 function fitDay(){const d=day();if(!map||!d)return fitAll();const ps=d.pins.map(x=>x.pt.latlng),i=insets();if(ps.length>1)map.fitBounds(L.latLngBounds(ps),{paddingTopLeft:i.tl,paddingBottomRight:i.br,maxZoom:14});else if(ps.length)map.setView(ps[0],14);else map.setView([-8.55,115.2],10)}
 function fitAll(){if(!map)return;const ps=data.days.flatMap(d=>d.pins.map(x=>x.pt.latlng)),i=insets();if(ps.length)map.fitBounds(L.latLngBounds(ps),{paddingTopLeft:i.tl,paddingBottomRight:i.br});else map.setView([-8.55,115.2],10)}
 function focusMap(zoom){const d=day();if(!map||!d)return;const x=d.pins.find(x=>x.id===S.sel);if(!x)return fitDay();const i=insets();if(zoom&&map.getZoom()<14)map.setView(x.pt.latlng,15);map.panInside(x.pt.latlng,{paddingTopLeft:i.tl,paddingBottomRight:i.br})}
 
 /* ---------- actions ---------- */
-function select(id,{open=false,toggle=false,scroll=false,pan=true}={}){const d=day();if(!d)return;const x=d.items.find(x=>x.id===id);if(!x)return;S.sel=id;if(toggle){S.open.has(id)?S.open.delete(id):S.open.add(id)}else if(open)S.open.add(id);renderPanel();updatePins();if(pan&&x.pt)focusMap(false);if(scroll){const r=document.getElementById('r-'+id);if(r)r.querySelector('.card').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'nearest'})}}
-function step(k){const d=day();if(!d||!d.pins.length)return;const i=curIdx(d),x=d.pins[(i+k+d.pins.length)%d.pins.length];select(x.id,{open:true,scroll:true,pan:true})}
+function deselect(){const id=S.sel;if(!id)return;S.sel=null;S.open.delete(id);renderPanel();updatePins()}
+function select(id,{open=false,toggle=false,scroll=false,pan=true}={}){const d=day();if(!d)return;const x=d.items.find(x=>x.id===id);if(!x)return;if(toggle&&S.sel===id)return deselect();S.sel=id;if(toggle||open)S.open.add(id);renderPanel();updatePins();if(pan&&x.pt)focusMap(false);if(scroll){const r=document.getElementById('r-'+id);if(r)r.querySelector('.card').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'nearest'})}}
+function step(k){const d=day();if(!d||!d.pins.length)return;const i=curIdx(d),x=S.sel?d.pins[(i+k+d.pins.length)%d.pins.length]:d.pins[k>0?0:d.pins.length-1];select(x.id,{open:true,scroll:true,pan:true})}
 function route(){const h=decodeURIComponent(location.hash.slice(1));let n,itemId=null;
  if(h==='prep'||h==='prepList')n=0;
  else if(!h)n=landingDay();
  else{const it=findItem(h);if(it){n=it.day.idx;itemId=it.id}else{n=Number((h.match(/^d(\d+)$/)||[])[1]);if(!(n>=1&&n<=N()))n=0}}
  const changed=n!==S.day||!S._init;S._init=true;
- if(changed){S.day=n;S.heroAnim=n===0;S.open=new Set();S.all=false;S.rain=false;const d=day();S.sel=d?((d.pins[0]||d.items[0]||{}).id||null):null;S.snap=defSnap()}
+ if(changed){S.day=n;S.heroAnim=n===0;S.open=new Set();S.all=false;S.rain=false;S.sel=null;S.snap=defSnap()}
  if(itemId){S.sel=itemId;S.open.add(itemId)}
  renderChrome();renderPanel(false);applySnap(false);if(changed)drawMap();else{updatePins();focusMap(false)}
  if(itemId)setTimeout(()=>select(S.sel,{scroll:true}),50);closeSearch();setDayMenu(false)}
@@ -535,7 +549,7 @@ document.addEventListener('keydown',e=>{
  const tb=e.target.closest&&e.target.closest('.ptabs [role=tab]');if(tb&&(e.key==='ArrowRight'||e.key==='ArrowLeft')){e.preventDefault();const all=[...document.querySelectorAll('.ptabs [role=tab]')],i=all.indexOf(tb),n=all[(i+(e.key==='ArrowRight'?1:all.length-1))%all.length];n.click();return}
  const menu=$('#dmenu'),open=menu&&!menu.hidden;
  if(e.key==='Escape'&&S.picking){$('#pickX').click();return}
- if(e.key==='Escape'&&!$('#lb').open&&!$('#ed').open){closeSearch();if(open){setDayMenu(false);$('#mlabel').focus()}}
+ if(e.key==='Escape'&&!$('#lb').open&&!$('#ed').open){const sOpen=S.search||document.querySelector('.results.show')!==null||!!$('#q').value||!!$('#mq').value;closeSearch();if(open){setDayMenu(false);$('#mlabel').focus()}else if(!sOpen&&!e.target.closest('input,textarea,select'))deselect()}
  if(e.key!=='ArrowDown'&&e.key!=='ArrowUp'&&e.key!=='Home'&&e.key!=='End')return;
  if(!open){if((e.key==='ArrowDown'||e.key==='ArrowUp')&&document.activeElement===$('#mlabel')){e.preventDefault();setDayMenu(true);const cur=$('#dmenu a[aria-current=page]')||$('#dmenu a');if(cur)cur.focus()}return}
  const items=[...menu.querySelectorAll('a')];if(!items.length)return;e.preventDefault();
