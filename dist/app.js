@@ -126,7 +126,7 @@ ${S.aiTab==='claude'?`<ol class="aisteps"><li>在 <a href="https://claude.ai/set
 const dupBox=()=>`<section class="aibox dupbox" id="dupBox"><h2>做一份自己的行程網站</h2><p>自己的網址與資料庫，部署到你的 Vercel 帳號，不會改到這個網站。複製下面這句，依你用的 AI 結果不同：</p><pre>${esc(DUP_PROMPT())}</pre><button type="button" class="chip pri" data-copy="${esc(DUP_PROMPT())}" data-copymsg="已複製，貼給你的 AI 即可">複製這句</button>
 <ul class="duprows"><li>${aiIc('grok','claude','codex')}<span><b>Grok Bot、Claude Code、Codex 等能執行指令的 AI</b>全自動完成：會先問你幾個問題，你只需要登入 Vercel（第一次用要在瀏覽器按一次同意）。</span></li>
 <li>${aiIc('claude','openai')}<span><b>Claude 聊天、ChatGPT 等只能聊天的 AI</b>不會自動部署：它會給你一個 Vercel 一鍵部署連結，你自己點開按 Deploy，完成後把新網址貼回給它，再請它幫你改內容。</span></li></ul></section>`;
-function goDup(){const show=()=>{const el=$('#dupBox');if(el)el.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'start'})};if($('#dupBox'))return show();location.hash='#prep';setTimeout(show,450)}
+function goDup(){const show=()=>scrollInList($('#dupBox'),'start');if($('#dupBox'))return show();location.hash='#prep';setTimeout(show,450)}
 async function copyText(v,msg){try{await navigator.clipboard.writeText(v)}catch(e){const t=document.createElement('textarea');t.value=v;document.body.appendChild(t);t.select();try{document.execCommand('copy')}catch(_){}t.remove()}toast(msg)}
 // 分享：手機用系統分享，其他複製到剪貼簿。朋友把這句貼給自己的 AI，就會接好 MCP 並打開網站
 async function shareSite(){const text=AI_PROMPT();
@@ -299,11 +299,27 @@ function routeCoords(g){if(!g)return[];const fs=g.type==='FeatureCollection'?g.f
 function updatePins(){const d=day();if(!d)return;const st=new Map();d.pins.forEach(x=>{const m=markers[x.id];if(!m)return;const o=st.get(m)||{sel:false,rain:false};o.sel=o.sel||x.id===S.sel;o.rain=o.rain||!!x.hasRain;st.set(m,o)});st.forEach((o,m)=>{const el=m.getElement();if(!el)return;const p=el.firstChild;p.classList.toggle('sel',o.sel);p.classList.toggle('dim',S.rain&&!o.rain);el.classList.toggle('on',o.sel)});styleRoute()}
 function fitDay(){const d=day();if(!map||!d)return fitAll();const ps=d.pins.map(x=>x.pt.latlng),i=insets();if(ps.length>1)map.fitBounds(L.latLngBounds(ps),{paddingTopLeft:i.tl,paddingBottomRight:i.br,maxZoom:14});else if(ps.length)map.setView(ps[0],14);else map.setView([-8.55,115.2],10)}
 function fitAll(){if(!map)return;const ps=data.days.flatMap(d=>d.pins.map(x=>x.pt.latlng)),i=insets();if(ps.length)map.fitBounds(L.latLngBounds(ps),{paddingTopLeft:i.tl,paddingBottomRight:i.br});else map.setView([-8.55,115.2],10)}
+// 選站時把「這站到下一站」那段整段放進畫面：已經完整可見、而且夠大就不動；否則縮放到剛好看得見
+function focusLeg(){const d=day(),k=ROUTE.split?activeLeg(d):-1;if(!map||k<0||!ROUTE.legs[k])return false;
+ let b=null;ROUTE.legs[k].forEach(({l})=>{const lb=l.getBounds();if(lb.isValid())b=b?b.extend(lb):L.latLngBounds(lb.getSouthWest(),lb.getNorthEast())});
+ const x=d.pins.find(x=>x.id===S.sel);if(x){b=b||L.latLngBounds(x.pt.latlng,x.pt.latlng);b.extend(x.pt.latlng)}
+ if(!b||!b.isValid()||b.getNorthEast().equals(b.getSouthWest()))return false;
+ const i=insets(),sz=map.getSize(),ne=map.latLngToContainerPoint(b.getNorthEast()),sw=map.latLngToContainerPoint(b.getSouthWest());
+ const inView=sw.x>=i.tl[0]&&ne.y>=i.tl[1]&&ne.x<=sz.x-i.br[0]&&sw.y<=sz.y-i.br[1],span=Math.max(ne.x-sw.x,sw.y-ne.y);
+ if(inView&&span>=160)return true;
+ map.fitBounds(b,{paddingTopLeft:[i.tl[0]+30,i.tl[1]+30],paddingBottomRight:[i.br[0]+30,i.br[1]+30],maxZoom:17,animate:!matchMedia('(prefers-reduced-motion:reduce)').matches});return true}
 function focusMap(zoom){const d=day();if(!map||!d)return;const x=d.pins.find(x=>x.id===S.sel);if(!x)return fitDay();const i=insets();if(zoom&&map.getZoom()<14)map.setView(x.pt.latlng,15);map.panInside(x.pt.latlng,{paddingTopLeft:i.tl,paddingBottomRight:i.br})}
 
 /* ---------- actions ---------- */
 function deselect(){const id=S.sel;if(!id)return;S.sel=null;S.open.delete(id);renderPanel();updatePins()}
-function select(id,{open=false,toggle=false,scroll=false,pan=true}={}){const d=day();if(!d)return;const x=d.items.find(x=>x.id===id);if(!x)return;if(toggle&&S.sel===id)return deselect();S.sel=id;if(toggle||open)S.open.add(id);renderPanel();updatePins();if(pan&&x.pt)focusMap(false);if(scroll){const r=document.getElementById('r-'+id);if(r)r.querySelector('.card').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'nearest'})}}
+// 只捲動清單本身（#scroll）。scrollIntoView 會連整個頁面一起捲，iOS 版面會整個往上移、上方按鈕跑出畫面
+function scrollInList(el,block){const sc=$('#scroll');if(!el)return;const smooth=!matchMedia('(prefers-reduced-motion:reduce)').matches;
+ if(!sc||!sc.contains(el)){el.scrollIntoView({behavior:smooth?'smooth':'auto',block});return}
+ const r=el.getBoundingClientRect(),c=sc.getBoundingClientRect(),top=c.top+Math.max(12,parseFloat(getComputedStyle(el).scrollMarginTop)||0),bottom=Math.min(c.bottom,innerHeight)-12;let dy=0;
+ if(block==='start')dy=r.top-top;else if(r.top<top)dy=r.top-top;else if(r.bottom>bottom)dy=Math.min(r.bottom-bottom,r.top-top);
+ if(dy)sc.scrollTo({top:sc.scrollTop+dy,behavior:smooth?'smooth':'auto'});
+ if(document.scrollingElement.scrollTop)document.scrollingElement.scrollTop=0}
+function select(id,{open=false,toggle=false,scroll=false,pan=true}={}){const d=day();if(!d)return;const x=d.items.find(x=>x.id===id);if(!x)return;if(toggle&&S.sel===id)return deselect();S.sel=id;if(toggle||open)S.open.add(id);renderPanel();updatePins();if(!focusLeg()&&pan&&x.pt)focusMap(false);if(scroll){const r=document.getElementById('r-'+id);if(r)scrollInList(r.querySelector('.card'),'nearest')}}
 function step(k){const d=day();if(!d||!d.pins.length)return;const i=curIdx(d),x=S.sel?d.pins[(i+k+d.pins.length)%d.pins.length]:d.pins[k>0?0:d.pins.length-1];select(x.id,{open:true,scroll:true,pan:true})}
 function route(){const h=decodeURIComponent(location.hash.slice(1));let n,itemId=null;
  if(h==='prep'||h==='prepList')n=0;
@@ -522,7 +538,7 @@ document.addEventListener('click',e=>{
  if(ds.copy){copyText(ds.copy,ds.copymsg||'已複製網址');return}
  if(ds.aitab){S.aiTab=ds.aitab;renderPanel();return}
  if(ds.ptab){S.ptab=ds.ptab;lsSet('bali-ptab',ds.ptab);renderPanel();const b=document.getElementById('pt-'+ds.ptab);if(b)b.focus({preventScroll:true});return}
- if(ds.scrollto){const el=document.getElementById(ds.scrollto);if(el)el.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'start'});return}
+ if(ds.scrollto){scrollInList(document.getElementById(ds.scrollto),'start');return}
  if(ds.edittrip!==undefined){openEditor('trip',data.trip||DEFAULT_TRIP);return}
  if(ds.pick)select(ds.pick,{toggle:true,pan:true});
  else if(ds.step)step(+ds.step);
