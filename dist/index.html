@@ -1001,6 +1001,21 @@ html.tab .idot{display:flex;width:22px;height:22px;border-radius:50%;background:
 html.tab .row.sel .idot{background:var(--sel,var(--gold))}
 html.tab .phb{height:100px}
 html.tab .row.tr{grid-column:1/-1}
+html.tab .row.stop.solo{grid-column:1/-1}
+/* 平板：收進卡片底部的交通／其他項目 */
+.tleg{display:none}
+html.tab .tleg{display:block;margin:0 14px;border-top:1px dashed var(--dash)}
+html.tab .tleg:last-child{margin-bottom:4px}
+html.tab .tlh{all:unset;box-sizing:border-box;width:100%;display:grid;grid-template-columns:auto 1fr auto;column-gap:10px;row-gap:2px;align-items:baseline;padding:9px 0;cursor:pointer;font-size:12px;color:var(--muted)}
+html.tab .tlh:focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:6px}
+html.tab .tlk{white-space:nowrap}
+html.tab .tlt{color:var(--ink);min-width:0}
+html.tab .tlt b{font-weight:600;color:var(--muted)}
+html.tab .tln{grid-column:2/3;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+html.tab .tlh .sign{grid-column:3;grid-row:1;color:var(--muted)}
+html.tab .tleg.sel .tlt{color:var(--sel,var(--gold));font-weight:600}
+html.tab .tleg.dim{opacity:.45}
+html.tab .tleg .body{background:var(--paper);border:1px dashed var(--dash);border-radius:12px;padding:12px 14px;margin:0 0 10px}
 html.tab .row.tr .card{border:0;background:transparent;border-radius:0;overflow:visible}
 html.tab .row.tr .head{padding:4px 6px;flex-direction:row;align-items:center;gap:12px;font-size:12px}
 html.tab .row.tr .hmain{flex-direction:row;align-items:center;gap:12px;color:var(--muted)}
