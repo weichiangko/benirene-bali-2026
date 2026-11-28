@@ -262,12 +262,16 @@ function drawMap(){if(!map)return;map.invalidateSize(false);overlay.clearLayers(
  if(!d){const ps=[];data.days.forEach(dd=>dd.pins.forEach(x=>{ps.push(x);const m=L.marker(x.pt.latlng,{icon:pinIcon('D'+dd.idx,'daypin'),keyboard:true,title:`D${dd.idx} ${x.pt.name}`}).addTo(overlay);m.bindTooltip(`<b>D${dd.idx} · ${esc(x.pt.name)}</b><br>${esc(x.pt.time)}`,{direction:'top',offset:[0,-16],className:'map-tip'});m.on('click',()=>{location.hash='d'+dd.idx;setTimeout(()=>select(x.id,{open:true,scroll:true,pan:true}),60)})}));if(ps.length)fitAll();return}
  if(d.routeGeometry)drawRoute(d.routeGeometry);
  else if(d.pins.length>1)L.polyline(d.pins.map(x=>x.pt.latlng),{color:cv('--gold'),weight:3,dashArray:'6 8',opacity:.9,interactive:false}).addTo(overlay);
- d.pins.forEach(x=>{if(x.pt.key==='batur')L.circle(x.pt.latlng,{radius:1500,color:cv('--gold'),weight:1,fillOpacity:.07,dashArray:'5 6',interactive:false}).addTo(overlay);
-  const m=L.marker(x.pt.latlng,{icon:pinIcon(x.n,''),keyboard:true,draggable:S.edit&&canEdit(),title:`第 ${x.n} 站：${x.ttl}`}).addTo(overlay);
-  m.bindTooltip(`<b>${esc(x.pt.name)}</b><br>${esc(x.pt.time)}${S.edit?'<br><small>拖動可移動位置</small>':''}`,{direction:'top',offset:[0,-22],className:'map-tip'});
-  m.on('click',()=>select(x.id,{open:true,scroll:true,pan:false}));
-  m.on('dragend',()=>{const p=m.getLatLng();moveItemTo(x,[+p.lat.toFixed(6),+p.lng.toFixed(6)])});
-  markers[x.id]=m});
+ d.pins.forEach(x=>{if(x.pt.key==='batur')L.circle(x.pt.latlng,{radius:1500,color:cv('--gold'),weight:1,fillOpacity:.07,dashArray:'5 6',interactive:false}).addTo(overlay)});
+ // 同一個地點的站（例如起點和終點都是住宿）合成一個標記，標成「1·5」，不然後面的號碼會蓋住前面的
+ const groups=[];d.pins.forEach(x=>{const g=groups.find(g=>L.latLng(g[0].pt.latlng).distanceTo(x.pt.latlng)<40);g?g.push(x):groups.push([x])});
+ groups.forEach(g=>{const x=g[0],multi=g.length>1;
+  const m=L.marker(x.pt.latlng,{icon:pinIcon(g.map(y=>y.n).join('·'),multi?'multi':''),keyboard:true,draggable:S.edit&&canEdit(),title:g.map(y=>`第 ${y.n} 站：${y.ttl}`).join('；')}).addTo(overlay);
+  m.bindTooltip(multi?g.map(y=>`<b>${y.n} · ${esc(y.pt.name)}</b> ${esc(y.pt.time)}`).join('<br>')+(S.edit?'<br><small>拖動會一起移動這幾站</small>':''):`<b>${esc(x.pt.name)}</b><br>${esc(x.pt.time)}${S.edit?'<br><small>拖動可移動位置</small>':''}`,{direction:'top',offset:[0,-22],className:'map-tip'});
+  // 合併的標記：再點一次換到下一站
+  m.on('click',()=>{const i=g.findIndex(y=>y.id===S.sel);select(g[i<0?0:(i+1)%g.length].id,{open:true,scroll:true,pan:false})});
+  m.on('dragend',()=>{const p=m.getLatLng(),ll=[+p.lat.toFixed(6),+p.lng.toFixed(6)];g.forEach(y=>moveItemTo(y,ll))});
+  g.forEach(y=>markers[y.id]=m)});
  fitDay();updatePins()}
 // 開車：沿道路實線；搭船：長虛線；搭飛機：點線；算不出路線（straight）：短虛線
 const MODE_STYLE={car:null,boat:{dashArray:'12 9',weight:3},plane:{dashArray:'2 9',weight:3.5,lineCap:'round'},straight:{dashArray:'6 8',weight:3}};
@@ -279,7 +283,7 @@ function drawRoute(g){const feats=g.type==='FeatureCollection'?g.features:[{type
   if(!st){L.geoJSON(f,{style:{...R,color:'#fff',weight:12,opacity:.9}}).addTo(overlay);L.geoJSON(f,{style:{...R,color:cv('--brown'),weight:7.5,opacity:1}}).addTo(overlay);L.geoJSON(f,{style:{...R,color:cv('--gold'),weight:4.5,opacity:1}}).addTo(overlay)}
   else{L.geoJSON(f,{style:{...R,color:'#fff',weight:st.weight+7,opacity:.85}}).addTo(overlay);L.geoJSON(f,{style:{color:cv('--gold'),opacity:1,...st,weight:st.weight+1.5,lineCap:st.lineCap||'butt'},interactive:true}).bindTooltip(MODE_NAME[m],{sticky:true,className:'map-tip'}).addTo(overlay)}})}
 function routeCoords(g){if(!g)return[];const fs=g.type==='FeatureCollection'?g.features.map(f=>f.geometry):[g];return fs.flatMap(x=>x.coordinates.map(c=>[c[1],c[0]]))}
-function updatePins(){const d=day();if(!d)return;d.pins.forEach(x=>{const m=markers[x.id];if(!m)return;const el=m.getElement();if(!el)return;const p=el.firstChild;p.classList.toggle('sel',x.id===S.sel);p.classList.toggle('dim',S.rain&&!x.hasRain);el.classList.toggle('on',x.id===S.sel)})}
+function updatePins(){const d=day();if(!d)return;const st=new Map();d.pins.forEach(x=>{const m=markers[x.id];if(!m)return;const o=st.get(m)||{sel:false,rain:false};o.sel=o.sel||x.id===S.sel;o.rain=o.rain||!!x.hasRain;st.set(m,o)});st.forEach((o,m)=>{const el=m.getElement();if(!el)return;const p=el.firstChild;p.classList.toggle('sel',o.sel);p.classList.toggle('dim',S.rain&&!o.rain);el.classList.toggle('on',o.sel)})}
 function fitDay(){const d=day();if(!map||!d)return fitAll();const ps=d.pins.map(x=>x.pt.latlng),i=insets();if(ps.length>1)map.fitBounds(L.latLngBounds(ps),{paddingTopLeft:i.tl,paddingBottomRight:i.br,maxZoom:14});else if(ps.length)map.setView(ps[0],14);else map.setView([-8.55,115.2],10)}
 function fitAll(){if(!map)return;const ps=data.days.flatMap(d=>d.pins.map(x=>x.pt.latlng)),i=insets();if(ps.length)map.fitBounds(L.latLngBounds(ps),{paddingTopLeft:i.tl,paddingBottomRight:i.br});else map.setView([-8.55,115.2],10)}
 function focusMap(zoom){const d=day();if(!map||!d)return;const x=d.pins.find(x=>x.id===S.sel);if(!x)return fitDay();const i=insets();if(zoom&&map.getZoom()<14)map.setView(x.pt.latlng,15);map.panInside(x.pt.latlng,{paddingTopLeft:i.tl,paddingBottomRight:i.br})}
